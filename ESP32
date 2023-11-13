@@ -1,0 +1,21 @@
+#include <Adafruit_NeoPixel.h> //library for the neopixel led
+
+#include <WiFi.h> //library for the WiFi connection
+#include <WiFiClient.h>// "
+#include <WiFiServer.h>// "
+
+const char* ssid = " ";
+const char* pass = " ";
+
+const int pinButton = 2;
+const int pinLed = 3;
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(pinButton, INPUT);
+
+}
+
+void loop() {
+
+}
