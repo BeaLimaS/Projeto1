@@ -1,4 +1,16 @@
-#define buttonPin 22 //button pin is 22
+#include <TFT.h>
+#include <SPI.h>
+
+#define buttonPin1 22 //button pin for the Cozinha
+#define buttonPin2 34 //button pin for the Piezzo
+#define piezzoPin 27 //pin for the Piezzo
+
+//pin declaration for the TFT
+#define cs 23
+#define dc 25
+#define rst 26
+
+TFT TFTscreen = TFT(cs, dc, rst);
 
 //variables for the State Machine
 bool lastState = 0;  //last state of the terminal
@@ -22,6 +34,9 @@ void setup() {
   Serial.begin(9600);
 
   pinMode(buttonPin, INPUT); //BUTTON_PIN is an INPUT
+
+  TFTscreen.background(204, 51, 77);
+  TFTscreen.stroke(51, 178, 204);
 }
 
 void loop() {
@@ -34,13 +49,14 @@ void loop() {
 
       case ACEITA:{
         //FALTA METER O QUE O CLIENTE VAI RECEBER
-        //ou seja, liga 2 primeiros LEDs do NeoPixel; Som de início
+        //ou seja, liga 2 primeiros LEDs do NeoPixel; Som de início == fur elise
         if(detectPress){currentState = PREPARAR;}
       }
 
       case PREPARAR:{
         //FALTA METER O QUE O CLIENTE VAI RECEBER
-        //ou seja, passar imagens no TFT; loading atraves dos NeoPixeis
+        //ou seja, passar imagens no TFT; loading atraves dos NeoPixeis (barra de progresso); piezzo toca musicas
+        //MÚSICAS==> Game of Thrones || Super Mario || Never Gonna Give You Up || Tetris || Merry Christmas 
         if(detectPress){currentState = PRONTO;}
       }
 
