@@ -1,10 +1,16 @@
 #include <TFT.h>
 #include <SPI.h>
 #include <JPEGDecoder.h>  // JPEG decoder library
+#include <Wifi.h> //library for the wireless connections
+#include <WiFiServer.h> //library for the access point
+
+
+#include <Adafruit_NeoPixel.h> //library for the neopixel led
+
 
 #define minumum(a, b) (((a) < (b) ? (a) : (b)))
 
-#define buttonPin1 22  //button pin for the Cozinha
+#define buttonPin 22  //button pin for the Cozinha
 #define piezzoPin 27   //pin for the Piezzo
 
 //pin declaration for the TFT
@@ -14,6 +20,11 @@
 #define sd 34  //pin for the SD Card
 
 TFT TFTscreen = TFT(cs, dc, rst);
+
+//ssid and pass for the conections
+
+const char* ssid = "";
+const char* pass = "";
 
 //notes for the piezzo
 
@@ -568,6 +579,7 @@ void setup() {
     Serial.begin(9600);
 
     pinMode(buttonPin, INPUT);  //BUTTON_PIN is an INPUT
+    pinMode(piezzoPin, OUTPUT);
 
 
     TFTscreen.begin();
@@ -590,6 +602,12 @@ void setup() {
       while (1)
         ;  // Image file missing so stay here
     }
+
+    //set up access point
+    Wifi.softAP(ssid, pass);  
+    Serial.println("Access point started!");
+    Serial.print("IP Adress:");
+    Serial.println(Wifi.softAPIP());
   }
 
 void loop() {
