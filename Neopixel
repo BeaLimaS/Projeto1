@@ -12,7 +12,7 @@ void setup() {
 void loop() {
   NeoPixel.clear();  // set all pixel colors to 'off'. It only takes effect if pixels.show() is called
 
-  // turn pixels to green one-by-one with delay between each pixel
+  // turn pixels to red one-by-one with delay between each pixel
   for (int pixel = 0; pixel < NUM_PIXELS; pixel++) {           // for each pixel
     NeoPixel.setPixelColor(pixel, NeoPixel.Color(255, 0, 0));  // it only takes effect if pixels.show() is called
     NeoPixel.show();                                           // update to the NeoPixel Led Strip
@@ -25,7 +25,7 @@ void loop() {
   NeoPixel.show();  // update to the NeoPixel Led Strip
   delay(2000);      // 2 seconds off time
 
-  // turn on all pixels to red at the same time for two seconds
+  // turn on all pixels to green at the same time for two seconds
   for (int pixel = 0; pixel < NUM_PIXELS; pixel++) {           // for each pixel
     NeoPixel.setPixelColor(pixel, NeoPixel.Color(0, 255, 0));  // it only takes effect if pixels.show() is called
   }
