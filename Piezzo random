@@ -1,1 +1,80 @@
+#include <Arduino.h>
+
+#define NOTE_B0  31
+#define NOTE_C1  33
+// ... (resto do código das notas)
+
+int tempo_game_of_thrones = 85;
+int tempo_christmas = 140;
+int tempo_mario = 200;
+int tempo_tetris = 144;
+int tempo_never_gonna_give_you_up = 114;
+
+int melody_game_of_thrones[] = {/*...*/};
+int melody_christmas[] = {/*...*/};
+int melody_mario[] = {/*...*/};
+int melody_tetris[] = {/*...*/};
+int melody_never_gonna_give_you_up[] = {/*...*/};
+
+int notes_game_of_thrones = sizeof(melody_game_of_thrones) / sizeof(melody_game_of_thrones[0]) / 2;
+int notes_christmas = sizeof(melody_christmas) / sizeof(melody_christmas[0]) / 2;
+int notes_mario = sizeof(melody_mario) / sizeof(melody_mario[0]) / 2;
+int notes_tetris = sizeof(melody_tetris) / sizeof(melody_tetris[0]) / 2;
+int notes_never_gonna_give_you_up = sizeof(melody_never_gonna_give_you_up) / sizeof(melody_never_gonna_give_you_up[0]) / 2;
+
+int wholenote_game_of_thrones = (60000 * 4) / tempo_game_of_thrones;
+int wholenote_christmas = (60000 * 4) / tempo_christmas;
+int wholenote_mario = (60000 * 4) / tempo_mario;
+int wholenote_tetris = (60000 * 4) / tempo_tetris;
+int wholenote_never_gonna_give_you_up = (60000 * 4) / tempo_never_gonna_give_you_up;
+
+int buzzer = 18;
+
+int lastSongIndex = -1;  // Inicializa a variável que armazena o índice da última música tocada
+
+void playRandomSong() {
+  int randomSong;
+  
+  do {
+    randomSong = random(5);  // Gera um número aleatório de 0 a 4
+  } while (randomSong == lastSongIndex);  // Garante que a próxima música não seja a mesma
+
+  lastSongIndex = randomSong;  // Atualiza o índice da última música tocada
+
+  switch (randomSong) {
+    case 0:
+      tone(buzzer, melody_game_of_thrones, wholenote_game_of_thrones * 2);
+      delay(wholenote_game_of_thrones * 2);
+      break;
+    case 1:
+      tone(buzzer, melody_christmas, wholenote_christmas * 2);
+      delay(wholenote_christmas * 2);
+      break;
+    case 2:
+      tone(buzzer, melody_mario, wholenote_mario * 2);
+      delay(wholenote_mario * 2);
+      break;
+    case 3:
+      tone(buzzer, melody_tetris, wholenote_tetris * 2);
+      delay(wholenote_tetris * 2);
+      break;
+    case 4:
+      tone(buzzer, melody_never_gonna_give_you_up, wholenote_never_gonna_give_you_up * 2);
+      delay(wholenote_never_gonna_give_you_up * 2);
+      break;
+    default:
+      // Alguma ação padrão, se necessário
+      break;
+  }
+}
+
+void setup() {
+  randomSeed(analogRead(0));  // Inicializa a semente do gerador de números aleatórios com uma leitura analógica
+  pinMode(buzzer, OUTPUT);
+}
+
+void loop() {
+  playRandomSong();
+  delay(2000);  // Espera 2 segundos entre cada música
+}
 
