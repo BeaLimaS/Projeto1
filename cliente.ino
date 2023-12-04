@@ -29,9 +29,12 @@ Adafruit_ST7735 TFTscreen = Adafruit_ST7735(cs, dc, rst);
 #define numNeopixel 12  // The number of LEDs (pixels) on NeoPixel LED strip
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(numNeopixel, neoPixelPin, NEO_GRB + NEO_KHZ800);
 
-//ssid and pass for the wireless connections (created by the ESP32 SERVER)
-/*char ssid[] = "esp32";
-char pass[] = "pass";*/
+/*
+  Game of Thrones, We Wish You a Merry Christmas, Mario, Tetris and Never gonna give you up.
+  Connect a piezo buzzer or speaker to pin 18 or select a new pin.
+  More songs available at https://github.com/robsoncouto/arduino-songs
+*/
+
 #define NOTE_B0  31
 #define NOTE_C1  33
 #define NOTE_CS1 35
@@ -123,19 +126,23 @@ char pass[] = "pass";*/
 #define NOTE_DS8 4978
 #define REST      0
 
+// change this to make the song slower or faster
 int tempo_game_of_thrones = 85;
 int tempo_christmas = 140;
 int tempo_mario = 200;
 int tempo_tetris = 144;
 int tempo_never_gonna_give_you_up = 114;
 
-int wholenote_game_of_thrones = (60000 * 4) / tempo_game_of_thrones;
-int wholenote_christmas = (60000 * 4) / tempo_christmas;
-int wholenote_mario = (60000 * 4) / tempo_mario;
-int wholenote_tetris = (60000 * 4) / tempo_tetris;
-int wholenote_never_gonna_give_you_up = (60000 * 4) / tempo_never_gonna_give_you_up;
+// change this to whichever pin you want to use
+int buzzer = 18;
 
-int melody_game_of_thrones[] = { NOTE_G4, 8, NOTE_C4, 8, NOTE_DS4, 16, NOTE_F4, 16, NOTE_G4, 8, NOTE_C4, 8, NOTE_DS4, 16, NOTE_F4, 16, //1
+// notes of the melody followed by the duration.
+// a 4 means a quarter note, 8 an eighth , 16 sixteenth, and so on
+// !!negative numbers are used to represent dotted notes,
+// so -4 means a dotted quarter note, that is, a quarter plus an eighth!!
+
+int melody_game_of_thrones[] = {
+  NOTE_G4, 8, NOTE_C4, 8, NOTE_DS4, 16, NOTE_F4, 16, NOTE_G4, 8, NOTE_C4, 8, NOTE_DS4, 16, NOTE_F4, 16, //1
   NOTE_G4, 8, NOTE_C4, 8, NOTE_DS4, 16, NOTE_F4, 16, NOTE_G4, 8, NOTE_C4, 8, NOTE_DS4, 16, NOTE_F4, 16,
   NOTE_G4, 8, NOTE_C4, 8, NOTE_E4, 16, NOTE_F4, 16, NOTE_G4, 8, NOTE_C4, 8, NOTE_E4, 16, NOTE_F4, 16,
   NOTE_G4, 8, NOTE_C4, 8, NOTE_E4, 16, NOTE_F4, 16, NOTE_G4, 8, NOTE_C4, 8, NOTE_E4, 16, NOTE_F4, 16,
@@ -180,8 +187,14 @@ int melody_game_of_thrones[] = { NOTE_G4, 8, NOTE_C4, 8, NOTE_DS4, 16, NOTE_F4, 
   NOTE_C5, 8, NOTE_G4, 8, NOTE_GS4, 16, NOTE_AS4, 16, NOTE_C5, 8, NOTE_G4, 8, NOTE_GS4, 16, NOTE_AS4, 16,
 
   REST, 4, NOTE_GS5, 16, NOTE_AS5, 16, NOTE_C6, 8, NOTE_G5, 8, NOTE_GS5, 16, NOTE_AS5, 16,
-  NOTE_C6, 8, NOTE_G5, 16, NOTE_GS5, 16, NOTE_AS5, 16, NOTE_C6, 8, NOTE_G5, 8, NOTE_GS5, 16, NOTE_AS5, 16,};
-int melody_christmas[] = {NOTE_C5, 4, //1
+  NOTE_C6, 8, NOTE_G5, 16, NOTE_GS5, 16, NOTE_AS5, 16, NOTE_C6, 8, NOTE_G5, 8, NOTE_GS5, 16, NOTE_AS5, 16,
+};
+
+int notes_game_of_thrones = sizeof(melody_game_of_thrones) / sizeof(melody_game_of_thrones[0]) / 2;
+int wholenote_game_of_thrones = (60000 * 4) / tempo_game_of_thrones;
+
+int melody_christmas[] = {
+  NOTE_C5, 4, //1
   NOTE_F5, 4, NOTE_F5, 8, NOTE_G5, 8, NOTE_F5, 8, NOTE_E5, 8,
   NOTE_D5, 4, NOTE_D5, 4, NOTE_D5, 4,
   NOTE_G5, 4, NOTE_G5, 8, NOTE_A5, 8, NOTE_G5, 8, NOTE_F5, 8,
@@ -243,8 +256,14 @@ int melody_christmas[] = {NOTE_C5, 4, //1
   NOTE_A5, 4, NOTE_A5, 8, NOTE_AS5, 8, NOTE_A5, 8, NOTE_G5, 8, //53
   NOTE_F5, 4, NOTE_D5, 4, NOTE_C5, 8, NOTE_C5, 8,
   NOTE_D5, 4, NOTE_G5, 4, NOTE_E5, 4,
-  NOTE_F5, 2, REST, 4};
-int melody_mario[] = { NOTE_E5, 8, NOTE_E5, 8, REST, 8, NOTE_E5, 8, REST, 8, NOTE_C5, 8, NOTE_E5, 8, //1
+  NOTE_F5, 2, REST, 4
+};
+
+int notes_christmas = sizeof(melody_christmas) / sizeof(melody_christmas[0]) / 2;
+int wholenote_christmas = (60000 * 4) / tempo_christmas;
+
+int melody_mario[] = {
+  NOTE_E5, 8, NOTE_E5, 8, REST, 8, NOTE_E5, 8, REST, 8, NOTE_C5, 8, NOTE_E5, 8, //1
   NOTE_G5, 4, REST, 4, NOTE_G4, 8, REST, 4,
   NOTE_C5, -4, NOTE_G4, 8, REST, 4, NOTE_E4, -4, // 3
   NOTE_A4, 4, NOTE_B4, 4, NOTE_AS4, 8, NOTE_A4, 4,
@@ -326,7 +345,12 @@ int melody_mario[] = { NOTE_E5, 8, NOTE_E5, 8, REST, 8, NOTE_E5, 8, REST, 8, NOT
   NOTE_C5, -4, NOTE_G4, -4, NOTE_E4, 4, //45
   NOTE_A4, -8, NOTE_B4, -8, NOTE_A4, -8, NOTE_GS4, -8, NOTE_AS4, -8, NOTE_GS4, -8,
   NOTE_G4, 8, NOTE_D4, 8, NOTE_E4, -2,};
-int melody_tetris[] = {NOTE_E5, 4,  NOTE_B4, 8,  NOTE_C5, 8,  NOTE_D5, 4,  NOTE_C5, 8,  NOTE_B4, 8,
+
+  int notes_mario = sizeof(melody_mario) / sizeof(melody_mario[0]) / 2;
+  int wholenote_mario = (60000 * 4) / tempo_mario;
+
+int melody_tetris[] = {
+  NOTE_E5, 4,  NOTE_B4, 8,  NOTE_C5, 8,  NOTE_D5, 4,  NOTE_C5, 8,  NOTE_B4, 8,
   NOTE_A4, 4,  NOTE_A4, 8,  NOTE_C5, 8,  NOTE_E5, 4,  NOTE_D5, 8,  NOTE_C5, 8,
   NOTE_B4, -4,  NOTE_C5, 8,  NOTE_D5, 4,  NOTE_E5, 4,
   NOTE_C5, 4,  NOTE_A4, 4,  NOTE_A4, 8,  NOTE_A4, 4,  NOTE_B4, 8,  NOTE_C5, 8,
@@ -355,7 +379,13 @@ int melody_tetris[] = {NOTE_E5, 4,  NOTE_B4, 8,  NOTE_C5, 8,  NOTE_D5, 4,  NOTE_
   NOTE_D5, 2,   NOTE_B4, 2,
   NOTE_C5, 4,   NOTE_E5, 4,  NOTE_A5, 2,
   NOTE_GS5, 2,};
-int melody_never_gonna_give_you_up[] = {NOTE_D5,-4, NOTE_E5,-4, NOTE_A4,4, //1
+
+  int notes_tetris = sizeof(melody_tetris) / sizeof(melody_tetris[0]) / 2;
+  int wholenote_tetris = (60000 * 4) / tempo_tetris;
+
+
+int melody_never_gonna_give_you_up[] = {
+  NOTE_D5,-4, NOTE_E5,-4, NOTE_A4,4, //1
   NOTE_E5,-4, NOTE_FS5,-4, NOTE_A5,16, NOTE_G5,16, NOTE_FS5,8,
   NOTE_D5,-4, NOTE_E5,-4, NOTE_A4,2,
   NOTE_A4,16, NOTE_A4,16, NOTE_B4,16, NOTE_D5,8, NOTE_D5,16,
@@ -422,14 +452,8 @@ int melody_never_gonna_give_you_up[] = {NOTE_D5,-4, NOTE_E5,-4, NOTE_A4,4, //1
 
   NOTE_E5,4, NOTE_D5,2, REST,4};
 
-
-
-
-unsigned int notes_game_of_thrones = sizeof(melody_game_of_thrones) / sizeof(melody_game_of_thrones[0]) / 2;
-unsigned int notes_christmas = sizeof(melody_christmas) / sizeof(melody_christmas[0]) / 2;
-unsigned int notes_mario = sizeof(melody_mario) / sizeof(melody_mario[0]) / 2;
-unsigned int notes_tetris = sizeof(melody_tetris) / sizeof(melody_tetris[0]) / 2;
-unsigned int notes_never_gonna_give_you_up = sizeof(melody_never_gonna_give_you_up) / sizeof(melody_never_gonna_give_you_up[0]) / 2;
+ int notes_never_gonna_give_you_up = sizeof(melody_never_gonna_give_you_up) / sizeof(melody_never_gonna_give_you_up[0]) / 2;
+int wholenote_never_gonna_give_you_up = (60000 * 4) / tempo_never_gonna_give_you_up;
 
 void playMelody(int melody[], int notes, int wholenote) {
   // iterate over the notes of the melody
