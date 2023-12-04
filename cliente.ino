@@ -461,7 +461,7 @@ void playMelody(int melody[], int notes, int wholenote) {
     int divider = melody[thisNote + 1];
     int noteDuration = (divider > 0) ? wholenote / divider : wholenote / abs(divider) * 1.5;
 
-    tone(buzzer, melody[thisNote], noteDuration * 0.9);
+    tone(piezzoPin, melody[thisNote], noteDuration * 0.9);
     delay(noteDuration);
     noTone(buzzer);
   }
