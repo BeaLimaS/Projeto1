@@ -1,8 +1,11 @@
 #include <Wire.h>
-#include <wifi.h>
-#include <Bounce2.h>
+#include <WiFi.h>
 
 #define buttonPin 22
+
+const char *ssid = "ESP32";
+const char *password = "pass";
+const int i2cSlaveAddress = 8;  // I2C SLAVE I2C address
 
 enum States {
   ESPERA,
@@ -11,47 +14,54 @@ enum States {
   PRONTO
 };
 
-Bounce debouncer = Bounce();  // Cria um objeto Bounce para debouncing
+
 States currentState = ESPERA;
+unsigned long lastTransitionTime = 0;
+unsigned long debouncePeriod = 1000; //debounce time in milliseconds
 
 void setup() {
   Serial.begin(9600);
   pinMode(buttonPin, INPUT);
-  debouncer.attach(buttonPin);
-  debouncer.interval(50);  // Tempo de debounce em milissegundos
+
+//initialize AP
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    Serial.println("Conectando ao Wi-Fi...");
+  }
+  Serial.println("Conectado ao Wi-Fi!");
+  Serial.print("Endereço IP do Cliente: ");
+  Serial.println(WiFi.localIP());
+  }
+
+// Inicialize I2C address
+  Wire.begin(i2cSlaveAddress);
+  Wire.onReceive(receberInstrucao);
 }
 
 void loop() {
-  // Atualiza o estado do botão
-  debouncer.update();
+  unsigned long currentTime = millis();
 
-  // Verifica se o botão foi pressionado
-  if (debouncer.fell()) {
-    nextState();  // Chama a função para transição de estado
-  }
-
+   // Adiciona um debounce simples
+  if (tempoAtual - ultimoTempoTransicao >= periodoDebounce) {
   switch (currentState) {
     case ESPERA:
-      sendCommandToSlave("ESPERA");
-      delay(1000);
+      enviarComando("ESPERA");
       currentState = ACEITE;
       break;
 
     case ACEITE:
-      sendCommandToSlave("ACEITE");
-      delay(1000);
+      enviarComando("ACEITE");
       currentState = PREPARAR;
       break;
 
     case PREPARAR:
-      sendCommandToSlave("PREPARAR");
-      delay(1000);
+      enviarComando("PREPARAR");
       currentState = PRONTO;
       break;
 
     case PRONTO:
-      sendCommandToSlave("PRONTO");
-      delay(1000);
+      enviarComando("PRONTO");
       currentState = ESPERA;  // Volta ao estado inicial para reiniciar o ciclo
       break;
 
@@ -59,8 +69,8 @@ void loop() {
       // Tratamento de erro, se necessário
       break;
   }
-
-  // Seu código aqui
+  lastTransitionTime = currentTime;
+  }
 }
 
 void sendCommandToSlave(String command) {
