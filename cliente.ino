@@ -430,7 +430,17 @@ unsigned int notes_christmas = sizeof(melody_christmas) / sizeof(melody_christma
 unsigned int notes_mario = sizeof(melody_mario) / sizeof(melody_mario[0]) / 2;
 unsigned int notes_tetris = sizeof(melody_tetris) / sizeof(melody_tetris[0]) / 2;
 unsigned int notes_never_gonna_give_you_up = sizeof(melody_never_gonna_give_you_up) / sizeof(melody_never_gonna_give_you_up[0]) / 2;
- 
+
+void playMelody(int melody[], int notes, int wholenote) {
+  // iterate over the notes of the melody
+  for (int thisNote = 0; thisNote < notes * 2; thisNote = thisNote + 2) {
+    int divider = melody[thisNote + 1];
+    int noteDuration = (divider > 0) ? wholenote / divider : wholenote / abs(divider) * 1.5;
+
+    tone(buzzer, melody[thisNote], noteDuration * 0.9);
+    delay(noteDuration);
+    noTone(buzzer);
+  }
 }
 
 void setup() {
@@ -453,7 +463,7 @@ void setup() {
   Wire.onReceive(receberComando);
 }
 
-void executarComando(states comando){
+void executarComando(){
   switch (states) {
     case ESPERA:
       Serial.println("Comando [ESPERA] recebido!");
@@ -503,6 +513,27 @@ void executeACEITE() {
 void executePREPARAR() {
   //============================================================FOR THE INFORMATION ON THE FTF=============================================================================================
   TFTscreen.print("A preparar ;)");
+   // play Game of Thrones melody
+  playMelody(melody_game_of_thrones, notes_game_of_thrones, wholenote_game_of_thrones);
+  // wait for 3 seconds
+  delay(3000);
+
+  // play We Wish You a Merry Christmas melody
+  playMelody(melody_christmas, notes_christmas, wholenote_christmas);
+  delay(3000);
+
+  // play Mario
+  playMelody(melody_mario, notes_mario, wholenote_mario);
+  delay(3000);
+
+  // play Tetris
+  playMelody(melody_tetris, notes_tetris, wholenote_tetris);
+  delay(3000);
+
+  
+  // play Never gonna give you up
+  playMelody(melody_never_gonna_give_you_up, notes_never_gonna_give_you_up, wholenote_never_gonna_give_you_up);
+  delay(3000);
 
   //============================================================================PROGRESS BAR NEOPIXEL LED==================================================================================
   strip.clear();  //cleans the 2 pixels left on for the ACEITE state
