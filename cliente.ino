@@ -430,40 +430,7 @@ unsigned int notes_christmas = sizeof(melody_christmas) / sizeof(melody_christma
 unsigned int notes_mario = sizeof(melody_mario) / sizeof(melody_mario[0]) / 2;
 unsigned int notes_tetris = sizeof(melody_tetris) / sizeof(melody_tetris[0]) / 2;
 unsigned int notes_never_gonna_give_you_up = sizeof(melody_never_gonna_give_you_up) / sizeof(melody_never_gonna_give_you_up[0]) / 2;
-
-void playRandomSong() {
-  int randomSong;
-  do {
-    randomSong = random(5);  // Gera um número aleatório de 0 a 4
-  } while (randomSong == lastSongIndex);  // Garante que a próxima música não seja a mesma
-
-  lastSongIndex = randomSong;  // Atualiza o índice da última música tocada
-
-  switch (randomSong) {
-    case 0:
-      tone(piezzoPin, melody_game_of_thrones, wholenote_game_of_thrones * 2);
-      delay(wholenote_game_of_thrones * 2);
-      break;
-    case 1:
-      tone(piezzoPin, melody_christmas, wholenote_christmas * 2);
-      delay(wholenote_christmas * 2);
-      break;
-    case 2:
-      tone(piezzoPin, melody_mario, wholenote_mario * 2);
-      delay(wholenote_mario * 2);
-      break;
-    case 3:
-      tone(piezzoPin, melody_tetris, wholenote_tetris * 2);
-      delay(wholenote_tetris * 2);
-      break;
-    case 4:
-      tone(piezzoPin, melody_never_gonna_give_you_up, wholenote_never_gonna_give_you_up * 2);
-      delay(wholenote_never_gonna_give_you_up * 2);
-      break;
-    default:
-      // Alguma ação padrão, se necessário
-      break;
-  }
+ 
 }
 
 void setup() {
