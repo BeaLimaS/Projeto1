@@ -1,31 +1,24 @@
-#include <Wire.h>
 #include <WiFi.h>
 #include <Adafruit_ST7735.h>    //library for the TFT
 #include <Adafruit_NeoPixel.h>  //library for the neopixel led
 //#include <TonePitch.h>          //library for the Buzzer
 
-enum States {
+#define piezzoPin 27  //pin for the Piezzo
+
+const char *ssid = "ESP32";
+const char *password = "pass";
+const uint16_t port = 56789;
+
+WiFiServer server(port);
+WiFiClient client;
+
+enum State {
   ESPERA,
   ACEITE,
   PREPARAR,
   PRONTO
 };
-States currentState = ESPERA;
-
-#define piezzoPin 27  //pin for the Piezzo
-
-const char *ssid = "ESP32";
-const char *password = "pass";
-const int i2cSlaveAddress = 8;  // I2C SLAVE I2C address
-
-//function to recive command from the Cozinha
-void receberComando(int byteCount) {
-  // Handle received data in this function
-  while (Wire.available()) {
-    char receivedByte = Wire.read();
-    // Process the received byte as needed
-  }
-}
+State currentState = ESPERA;
 
 int lastSongIndex = -1;  // Inicializa a variável que armazena o índice da última música tocada
 
@@ -463,15 +456,17 @@ void setup() {
   TFTscreen.setTextColor(ST7735_RED);
   TFTscreen.setTextSize(1);
 
-//connect to the AP
-   WiFi.softAP(ssid, password);
-  Serial.println("Ponto de Acesso configurado com sucesso!");
-  Serial.print("Endereço IP do Ponto de Acesso: ");
-  Serial.println(WiFi.softAPIP());
+// Connect to WiFi
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    Serial.println("Connecting to WiFi...");
+  }
+  Serial.println("Connected to WiFi");
 
-  // Inicializar a comunicação I2C
-  Wire.begin(i2cSlaveAddress);
-  Wire.onReceive(receberComando);
+  // Start the server
+  server.begin();
+  Serial.println("Server started");
 }
 
 void executeESPERA() {
@@ -547,38 +542,58 @@ void executePRONTO() {
   Serial.println("[EXCUTING] PRONTO");
 }
 
-void unknownCommand() {
-  Serial.println("[ERROR] Unknown Command");
+void loop() {
+  // Check for a client
+  if (!client.connected()) {
+    client = server.available();
+    if (client) {
+      Serial.println("Client connected");
+    }
+  }
+
+  // Read data from the client
+  while (client.connected()) {
+    if (client.available()) {
+      int receivedValue = client.read() - '0';
+      processState(receivedValue);
+    }
+  }
+
+  // Execute the corresponding function based on the current state
+  executarComando();
 }
 
-void executarComando(){
+void processState(int stateValue) {
+  currentState = static_cast<State>(stateValue);
+  Serial.print("Received State: ");
+  Serial.println(currentState);
+  // No action is performed here since the execution is deferred to executarComando()
+}
+
+void executarComando() {
   switch (currentState) {
     case ESPERA:
-      Serial.println("Comando [ESPERA] recebido!");
+      Serial.println("Executing [ESPERA] state");
       executeESPERA();
       break;
 
     case ACEITE:
-      Serial.println("Comando [ACEITE] recebido!");
+      Serial.println("Executing [ACEITE] state");
       executeACEITE();
       break;
 
     case PREPARAR:
-      Serial.println("Comando [PREPARAR] recebido!");
+      Serial.println("Executing [PREPARAR] state");
       executePREPARAR();
       break;
-    
+
     case PRONTO:
-      Serial.println("Comando [PRONTO] recebido!");
+      Serial.println("Executing [PRONTO] state");
       executePRONTO();
       break;
 
     default:
-      Serial.println("Comando desconhecido!");
+      Serial.println("Unknown state!");
       break;
   }
-}
-
-void loop(){
-  executarComando();
 }
