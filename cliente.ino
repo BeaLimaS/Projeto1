@@ -1,10 +1,10 @@
-#include <WiFi.h>
+#include <WiFi.h>               //library for the wireless connections
 #include <Adafruit_ST7735.h>    //library for the TFT
 #include <Adafruit_NeoPixel.h>  //library for the neopixel led
-//#include <TonePitch.h>          //library for the Buzzer
 
 #define piezzoPin 27  //pin for the Piezzo
 
+//ssid and pass for the wireless connections (created by the ESP32 SERVER)
 const char *ssid = "ESP32";
 const char *password = "pass";
 const uint16_t port = 56789;
@@ -29,13 +29,11 @@ int lastSongIndex = -1;  // Inicializa a variável que armazena o índice da úl
 Adafruit_ST7735 TFTscreen = Adafruit_ST7735(cs, dc, rst);
 
 //pin declaration for the Neopixels
-#define neoPixelPin 16  // The ESP32 pin GPIO16 connected to NeoPixel
-#define numNeopixel 12  // The number of LEDs (pixels) on NeoPixel LED strip
+#define neoPixelPin 32  // The ESP32 pin GPIO16 connected to NeoPixel
+#define numNeopixel 30  // The number of LEDs (pixels) on NeoPixel LED strip
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(numNeopixel, neoPixelPin, NEO_GRB + NEO_KHZ800);
 
-//ssid and pass for the wireless connections (created by the ESP32 SERVER)
-/*char ssid[] = "esp32";
-char pass[] = "pass";*/
+
 #define NOTE_B0  31
 #define NOTE_C1  33
 #define NOTE_CS1 35
@@ -467,6 +465,10 @@ void setup() {
   // Start the server
   server.begin();
   Serial.println("Server started");
+
+  // Initialize NeoPixel and set the brightness
+  NeoPixel.begin();
+  NeoPixel.setBrightness(15);
 }
 
 void executeESPERA() {
