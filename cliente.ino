@@ -447,13 +447,13 @@ void playMelody(int melody[], int notes, int wholenote) {
 
 void setup() {
   Serial.begin(9600);
-  Serial1.begin(9600);
-  //font, backround color, text color and text size for the TFT
-  TFTscreen.setFont();
+  // Initialize the TFT
+  int16_t receibed=TFT.read16();
+  TFT.initR(receibed);
+  TFT.setRotation(3);
   TFTscreen.fillScreen(ST7735_WHITE);
   TFTscreen.setTextColor(ST7735_RED);
   TFTscreen.setTextSize(1);
-
 // Connect to WiFi
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
