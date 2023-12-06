@@ -1,0 +1,15 @@
+// Pino ligado ao buzzer
+int buzzer = 27;
+
+void setup() 
+{
+    // Define o pino do Buzzer como Saida 
+    pinMode(buzzer,OUTPUT);    
+}
+
+void loop() 
+{
+    // Aciona o buzzer na frequencia relativa ao Dó em Hz
+    tone(buzzer,261);
+     delay(10);
+}
