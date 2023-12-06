@@ -30,10 +30,9 @@ void sendCommand() {
 
 void setup() {
   Serial.begin(115200);
-  delay(10);
-
+  pinMode(buttonPin, INPUT_PULLUP);
+  
   // Connect to WiFi
-   // Connect to WiFi
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
@@ -45,13 +44,7 @@ void setup() {
 
 void loop() {
 
-  int buttonState = digitalRead(buttonPin);
-
-  if (buttonState == LOW && millis() - lastDebounceTime > debounceDelay) {
-    currentState = static_cast<State>((currentState + 1) % 4); // Cycle through four states
-    sendCommand();
-    lastDebounceTime = millis();
-  }
+  int buttonState = !digitalRead(buttonPin);
 
   // Try to connect to the client
   if (!client.connected()) {
@@ -59,30 +52,31 @@ void loop() {
     Serial.println("Connected to client");
   }
 
-/*  switch (currentState) {
+  switch (currentState) {
     case ESPERA:
-      enviarComando("ESPERA");
+      sendCommand("ESPERA");
       currentState = ACEITE;
       break;
 
     case ACEITE:
-      enviarComando("ACEITE");
+      sendCommand("ACEITE");
       currentState = PREPARAR;
       break;
 
     case PREPARAR:
-      enviarComando("PREPARAR");
+      sendCommand("PREPARAR");
       currentState = PRONTO;
       break;
 
     case PRONTO:
-      enviarComando("PRONTO");
+      sendCommand("PRONTO");
       currentState = ESPERA;  // Volta ao estado inicial para reiniciar o ciclo
       break;
 
     default:
       // Tratamento de erro, se necessário
+      sendCommand("Unknown state!");
       break;
   }
-  lastTransitionTime = currentTime;*/
+  lastTransitionTime = currentTime;
 }
