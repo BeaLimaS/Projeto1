@@ -20,8 +20,6 @@ enum State {
 };
 State currentState = ESPERA;
 
-int lastSongIndex = -1;  // Inicializa a variável que armazena o índice da última música tocada
-
 //pin declaration for the TFT
 #define cs 33
 #define dc 25
