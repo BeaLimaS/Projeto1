@@ -5,8 +5,8 @@
 #define piezzoPin 27  //pin for the Piezzo
 
 //ssid and pass for the wireless connections (created by the ESP32 SERVER)
-const char *ssid = "ESP32";
-const char *password = "pass";
+const char *ssid = "Cozinha";
+const char *password = "123456789";
 const uint16_t port = 56789;
 
 WiFiServer server(port);
@@ -18,19 +18,26 @@ enum State {
   PREPARAR,
   PRONTO
 };
-State currentState = ESPERA;
+State currentState = PREPARAR;
 
 //pin declaration for the TFT
-#define cs 33
-#define dc 25
-#define rst 26
-Adafruit_ST7735 TFTscreen = Adafruit_ST7735(cs, dc, rst);
+#define cs    5    // Chip select line for TFT display
+#define dc    4    // Data/Command line for TFT display
+#define rst   16   // Reset line for TFT display (can be any GPIO pin)
+#define TFT_MOSI  23   // SPI MOSI line
+#define TFT_SCLK  18   // SPI Clock line
+Adafruit_ST7735 TFT = Adafruit_ST7735(cs, dc, rst);
 
 //pin declaration for the Neopixels
-#define neoPixelPin 32  // The ESP32 pin GPIO16 connected to NeoPixel
-#define numNeopixel 30  // The number of LEDs (pixels) on NeoPixel LED strip
+#define neoPixelPin 13  // The ESP32 pin GPIO16 connected to NeoPixel
+#define numNeopixel 29  // The number of LEDs (pixels) on NeoPixel LED strip
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(numNeopixel, neoPixelPin, NEO_GRB + NEO_KHZ800);
 
+unsigned long previousMillisBlink = 0;
+unsigned long intervalBlink = 500;
+
+unsigned long previousMillisMelody = 0;
+unsigned long intervalMelody = 3000;
 
 #define NOTE_B0  31
 #define NOTE_C1  33
@@ -448,39 +455,51 @@ void setup() {
   // Initialize the TFT
   int16_t receibed=TFT.read16();
   TFT.initR(receibed);
-  TFT.setRotation(3);
-  TFTscreen.fillScreen(ST7735_WHITE);
-  TFTscreen.setTextColor(ST7735_RED);
-  TFTscreen.setTextSize(1);
+  TFT.setRotation(1);
+  TFT.fillScreen(ST7735_BLACK);
+ 
 // Connect to WiFi
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
     Serial.println("Connecting to WiFi...");
   }
-  Serial.println("Connected to WiFi");
+  Serial.println("Connected to WiFi") ;
 
   // Start the server
   server.begin();
   Serial.println("Server started");
 
   // Initialize NeoPixel and set the brightness
-  NeoPixel.begin();
-  NeoPixel.setBrightness(15);
+  strip.begin();
+  strip.setBrightness(1);
 }
 
 void executeESPERA() {
-  TFTscreen.print("À espera de pedido");  //FOR THE TFT
-  strip.clear();                          //CLEAR ALL NEOPIXELS
+  TFT.setTextColor(ST7735_WHITE);
+  TFT.setTextSize(2);
+  TFT.setCursor(0, 54);
 
+  TFT.print("A esperar...");  //FOR THE TFT
+  for (int pixel = 0; pixel <= 2; pixel++) {
+    strip.setPixelColor(pixel, strip.Color(0, 255, 0));
+    strip.show();
+    delay(10);
+  }
+  delay(1000);
+  TFT.fillScreen(ST7735_BLACK);
   Serial.println("[EXECUTING] ESPERA");
 }
 
 void executeACEITE() {
-  //============================================================================PROGRESS BAR NEOPIXEL LED==================================================================================
+  TFT.setTextColor(ST7735_WHITE);
+  TFT.setTextSize(2);
+  TFT.setCursor(0, 54);
   strip.clear();
-  for (int pixel = 0; pixel <= 2; pixel++) {
-    strip.setPixelColor(pixel, strip.Color(0, 255, 0));
+  TFT.print("Pedido aceite");  //FOR THE TFT
+
+  for (int pixel = 0; pixel <= 29; pixel++) {
+    strip.setPixelColor(pixel, strip.Color(255, 0, 0));
     strip.show();
     delay(50);
   }
@@ -488,16 +507,27 @@ void executeACEITE() {
   Serial.println("[EXECUTING] ACEITE");
 }
 
-void executePREPARAR() {
-  //============================================================FOR THE INFORMATION ON THE FTF=============================================================================================
-  TFTscreen.print("A preparar ;)");
-   // play Game of Thrones melody
-  playMelody(melody_game_of_thrones, notes_game_of_thrones, wholenote_game_of_thrones);
-  // wait for 3 seconds
-  delay(3000);
+void blinkTask() {
+  static bool toggle = false;
 
+  for (int pixel = 0; pixel < 29; pixel++) {
+    strip.setPixelColor(pixel, toggle ? strip.Color(255, 0, 0) : strip.Color(0, 0, 0));
+  }
+  strip.show();
+
+  toggle = !toggle;
+}
+
+void melodyTask() {
+  // Aqui coloque o código para tocar a melodia
+  
   // play We Wish You a Merry Christmas melody
   playMelody(melody_christmas, notes_christmas, wholenote_christmas);
+  delay(3000);
+
+  // play Game of Thrones melody
+  playMelody(melody_game_of_thrones, notes_game_of_thrones, wholenote_game_of_thrones);
+  // wait for 3 seconds
   delay(3000);
 
   // play Mario
@@ -513,7 +543,9 @@ void executePREPARAR() {
   playMelody(melody_never_gonna_give_you_up, notes_never_gonna_give_you_up, wholenote_never_gonna_give_you_up);
   delay(3000);
 
-  //============================================================================PROGRESS BAR NEOPIXEL LED==================================================================================
+}
+void executePREPARAR() {
+/*  //============================================================================PIEZZO MUSICS==================================================================================
   strip.clear();  //cleans the 2 pixels left on for the ACEITE state
   while (1) {
     strip.clear();  // Set all pixel colors to 'off'
@@ -525,13 +557,38 @@ void executePREPARAR() {
       delay(500);  // 500ms pause between each pixel
     }
   }
-  //============================================================================PIEZZO MUSICS==================================================================================
+  TFT.print("A preparar...)");
+  
+  //============================================================================PROGRESS BAR NEOPIXEL LED==================================================================================
+  
 
   Serial.println("[EXCUTING] PREPARAR");
+*/
+unsigned long currentMillis = millis();
+
+  // Executa a função de piscar a cada intervalo definido
+  if (currentMillis - previousMillisBlink >= intervalBlink) {
+    blinkTask();
+    previousMillisBlink = currentMillis;
+  }
+
+  // Executa a função da melodia a cada intervalo definido
+  if (currentMillis - previousMillisMelody >= intervalMelody) {
+    melodyTask();
+    previousMillisMelody = currentMillis;
+  }
+
+  // Outras ações podem ser adicionadas aqui, sem bloquear o código principal
+
 }
+
 void executePRONTO() {
   //============================================================FOR THE INFORMATION ON THE FTF=============================================================================================
-  TFTscreen.print("Pronto ;)");
+  TFT.print("Pronto...)");
+      // Aciona o buzzer na frequencia relativa ao Dó em Hz
+    tone(buzzer,261);
+     delay(10);
+
   //============================================================================PROGRESS BAR NEOPIXEL LED==================================================================================
   strip.clear();
   for (int pixel = 0; pixel < numNeopixel; pixel++) {    // for each pixel
@@ -542,32 +599,10 @@ void executePRONTO() {
   Serial.println("[EXCUTING] PRONTO");
 }
 
-void loop() {
-  // Check for a client
-  if (!client.connected()) {
-    client = server.available();
-    if (client) {
-      Serial.println("Client connected");
-    }
-  }
-
-  // Read data from the client
-  while (client.connected()) {
-    if (client.available()) {
-      int receivedValue = client.read() - '0';
-      processState(receivedValue);
-    }
-  }
-
-  // Execute the corresponding function based on the current state
-  executarComando();
-}
-
 void processState(int stateValue) {
   currentState = static_cast<State>(stateValue);
   Serial.print("Received State: ");
   Serial.println(currentState);
-  // No action is performed here since the execution is deferred to executarComando()
 }
 
 void executarComando() {
@@ -596,4 +631,24 @@ void executarComando() {
       Serial.println("Unknown state!");
       break;
   }
+}
+
+
+
+void loop() {
+  // Check for a client
+  if (!client.connected()) {
+    client = server.available();
+    if (client) {
+      Serial.println("Client connected");
+    }
+  }
+
+  if (Serial.available() > 0) {
+    int receivedValue = Serial.read() - '0';
+    processState(receivedValue);
+  }
+  // Execute the corresponding function based on the current state
+  delay(10);
+  executarComando();
 }
