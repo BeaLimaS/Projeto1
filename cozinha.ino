@@ -1,82 +1,40 @@
-#include <Wire.h>
 #include <WiFi.h>
+#include<SPI.h>
 
-#define buttonPin 22
+char ssid[] = "myNetwork";          //  your network SSID (name)
+char pass[] = "myPassword";   // your network password
 
-const char *ssid = "ESP32";
-const char *password = "pass";
-const uint16_t port = 56789;
+int status = WL_IDLE_STATUS;
+char servername[]="google.com";  // remote server we will connect to
 
 WiFiClient client;
 
-enum State {
-  ESPERA,
-  ACEITE,
-  PREPARAR,
-  PRONTO
-};
-
-State currentState = ESPERA;
-unsigned long lastDebounceTime = 0;
-unsigned long debounceDelay = 50;  //debounce time in milliseconds
-
-void sendCommand() {
-  if (client.connected()) {
-    client.print(static_cast<int>(currentState));
-    Serial.print("Sent command to client: ");
-    Serial.println(currentState);
-  }
-}
-
 void setup() {
-  Serial.begin(115200);
-  pinMode(buttonPin, INPUT_PULLUP);
-  
-  // Connect to WiFi
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(1000);
-    Serial.println("Connecting to WiFi...");
-  }
-  Serial.println("Connected to WiFi");
-}
+  delay(5000);
+  Serial.begin(9600);
+  Serial.println("Attempting to connect to WPA network...");
+  Serial.print("SSID: ");
+  Serial.println(ssid);
 
+  status = WiFi.begin(ssid, pass);
+  if ( status != WL_CONNECTED) {
+    Serial.println("Couldn't get a wifi connection");
+    // don't do anything else:
+    while(true);
+  }
+  else {
+    Serial.println("Connected to wifi");
+    Serial.println("\nStarting connection...");
+    // if you get a connection, report back via serial:
+    if (client.connect(servername, 80)) {
+      Serial.println("connected");
+      // Make a HTTP request:
+      client.println("GET /search?q=arduino HTTP/1.0");
+      client.println();
+    }
+  }
+}
 
 void loop() {
-
-  int buttonState = !digitalRead(buttonPin);
-
-  // Try to connect to the client
-  if (!client.connected()) {
-    client.connect("esp32-client", port);
-    Serial.println("Connected to client");
-  }
-
-  switch (currentState) {
-    case ESPERA:
-      sendCommand("ESPERA");
-      currentState = ACEITE;
-      break;
-
-    case ACEITE:
-      sendCommand("ACEITE");
-      currentState = PREPARAR;
-      break;
-
-    case PREPARAR:
-      sendCommand("PREPARAR");
-      currentState = PRONTO;
-      break;
-
-    case PRONTO:
-      sendCommand("PRONTO");
-      currentState = ESPERA;  // Volta ao estado inicial para reiniciar o ciclo
-      break;
-
-    default:
-      // Tratamento de erro, se necessário
-      sendCommand("Unknown state!");
-      break;
-  }
-  lastTransitionTime = currentTime;
+  Serial.println("Fuck...");
 }
