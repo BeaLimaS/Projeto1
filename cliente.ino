@@ -1,6 +1,7 @@
 #include <WiFi.h>               //library for the wireless connections
 #include <Adafruit_ST7735.h>    //library for the TFT
 #include <Adafruit_NeoPixel.h>  //library for the neopixel led
+#include <TaskScheduler.h>
 
 #define piezzoPin 27  //pin for the Piezzo
 
@@ -9,16 +10,21 @@ const char *ssid = "Cozinha";
 const char *password = "123456789";
 const uint16_t port = 56789;
 
-WiFiServer server(port);
-WiFiClient client;
+const char *serverIP = "192.168.1.1";
+IPAddress local_IP(192, 168, 1, 1);
+IPAddress gateway(192, 168, 1, 1);
+IPAddress subnet(255, 255, 255, 0);
 
-enum State {
-  ESPERA,
-  ACEITE,
-  PREPARAR,
-  PRONTO
-};
-State currentState = PREPARAR;
+WiFiServer server(80);
+
+TaskHandle_t AceiteLED;
+//TaskHandle_t AceitePiezzo;
+
+TaskHandle_t PrepararLED;
+TaskHandle_t PrepararPiezzo;
+
+TaskHandle_t ProntoLED;
+TaskHandle_t ProntoPiezzo;
 
 //pin declaration for the TFT
 #define cs    5    // Chip select line for TFT display
@@ -30,14 +36,14 @@ Adafruit_ST7735 TFT = Adafruit_ST7735(cs, dc, rst);
 
 //pin declaration for the Neopixels
 #define neoPixelPin 13  // The ESP32 pin GPIO16 connected to NeoPixel
-#define numNeopixel 29  // The number of LEDs (pixels) on NeoPixel LED strip
+#define numNeopixel 60  // The number of LEDs (pixels) on NeoPixel LED strip
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(numNeopixel, neoPixelPin, NEO_GRB + NEO_KHZ800);
 
-unsigned long previousMillisBlink = 0;
-unsigned long intervalBlink = 500;
-
-unsigned long previousMillisMelody = 0;
-unsigned long intervalMelody = 3000;
+//====================================================================================================================================================================================
+//====================================================================================================================================================================================
+//====================================================================MUSIC NOTES AND FUNCITIONS TO PLAY==============================================================================
+//====================================================================================================================================================================================
+//====================================================================================================================================================================================
 
 #define NOTE_B0  31
 #define NOTE_C1  33
@@ -449,6 +455,11 @@ void playMelody(int melody[], int notes, int wholenote) {
     noTone(piezzoPin);
   }
 }
+//====================================================================================================================================================================================
+//====================================================================================================================================================================================
+//============================================================================SETUP FUNCTION==========================================================================================
+//====================================================================================================================================================================================
+//====================================================================================================================================================================================
 
 void setup() {
   Serial.begin(9600);
@@ -459,68 +470,58 @@ void setup() {
   TFT.fillScreen(ST7735_BLACK);
  
 // Connect to WiFi
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(1000);
-    Serial.println("Connecting to WiFi...");
+  Serial.println("Attempting to connect to WPA network...");
+  WiFi.softAPConfig (local_IP, gateway, subnet);
+  bool status = WiFi.softAP(ssid, password);
+  if ( status != true) {
+    Serial.println("Couldn't get a wifi connection");
+    while(true);
   }
-  Serial.println("Connected to WiFi") ;
-
-  // Start the server
-  server.begin();
-  Serial.println("Server started");
+  else {
+    server.begin();
+    Serial.print("Connected to wifi. My address:");
+    IPAddress myAddress = WiFi.localIP();
+    Serial.println(myAddress);
+  }
 
   // Initialize NeoPixel and set the brightness
   strip.begin();
   strip.setBrightness(1);
+
+
+  xTaskCreatePinnedToCore(ACEITEneoPixel, "NeoPixelAceite", 1000, NULL, 1, &AceiteLED, tskNO_AFFINITY);
+  //xTaskCreatePinnedToCore(blinkTask, "NeoPixelAceite", 1000, NULL, 1, &AceitePiezzo, tskNO_AFFINITY);
+
+  xTaskCreatePinnedToCore(PREPARARneoPixel, "NeoPixelAceite", 1000, NULL, 1, &PrepararLED, tskNO_AFFINITY);
+  xTaskCreatePinnedToCore(PREPARARmusic, "NeoPixelAceite", 1000, NULL, 1, &PrepararPiezzo, tskNO_AFFINITY);
+
+  xTaskCreatePinnedToCore(PRONTOneoPixel, "NeoPixelAceite", 1000, NULL, 1, &ProntoLED, tskNO_AFFINITY);
+  xTaskCreatePinnedToCore(PRONTOmusic, "NeoPixelAceite", 1000, NULL, 1, &ProntoPiezzo, tskNO_AFFINITY);
+
+  //vTaskSuspend(); para suspender a task
 }
 
-void executeESPERA() {
-  TFT.setTextColor(ST7735_WHITE);
-  TFT.setTextSize(2);
-  TFT.setCursor(0, 54);
+//====================================================================================================================================================================================
+//====================================================================================================================================================================================
+//============================================================================FUNCTIONS TASKS=========================================================================================
+//====================================================================================================================================================================================
+//====================================================================================================================================================================================
 
-  TFT.print("A esperar...");  //FOR THE TFT
-  for (int pixel = 0; pixel <= 2; pixel++) {
-    strip.setPixelColor(pixel, strip.Color(0, 255, 0));
-    strip.show();
-    delay(10);
-  }
-  delay(1000);
-  TFT.fillScreen(ST7735_BLACK);
-  Serial.println("[EXECUTING] ESPERA");
-}
 
-void executeACEITE() {
-  TFT.setTextColor(ST7735_WHITE);
-  TFT.setTextSize(2);
-  TFT.setCursor(0, 54);
+void ACEITEneoPixel(void*) {
   strip.clear();
-  TFT.print("Pedido aceite");  //FOR THE TFT
-
-  for (int pixel = 0; pixel <= 29; pixel++) {
-    strip.setPixelColor(pixel, strip.Color(255, 0, 0));
-    strip.show();
-    delay(50);
-  }
-
-  Serial.println("[EXECUTING] ACEITE");
-}
-
-void blinkTask() {
-  static bool toggle = false;
-
-  for (int pixel = 0; pixel < 29; pixel++) {
-    strip.setPixelColor(pixel, toggle ? strip.Color(255, 0, 0) : strip.Color(0, 0, 0));
-  }
   strip.show();
 
-  toggle = !toggle;
+  for (int pixel = 0; pixel < numNeopixel; pixel++) {           
+    strip.setPixelColor(pixel, strip.Color(255, 0, 0));  
+    strip.show();                                           
+    delay(500);
+  }
+  strip.show();
 }
 
-void melodyTask() {
-  // Aqui coloque o código para tocar a melodia
-  
+
+void PREPARARmusic(void*) {
   // play We Wish You a Merry Christmas melody
   playMelody(melody_christmas, notes_christmas, wholenote_christmas);
   delay(3000);
@@ -538,117 +539,128 @@ void melodyTask() {
   playMelody(melody_tetris, notes_tetris, wholenote_tetris);
   delay(3000);
 
-  
   // play Never gonna give you up
   playMelody(melody_never_gonna_give_you_up, notes_never_gonna_give_you_up, wholenote_never_gonna_give_you_up);
   delay(3000);
-
 }
-void executePREPARAR() {
-/*  //============================================================================PIEZZO MUSICS==================================================================================
-  strip.clear();  //cleans the 2 pixels left on for the ACEITE state
-  while (1) {
-    strip.clear();  // Set all pixel colors to 'off'
-    // turn pixels to red one-by-one with delay between each pixel
-    for (int pixel = 0; pixel < numNeopixel; pixel++) {    // for each pixel
-      strip.setPixelColor(pixel, strip.Color(255, 0, 0));  // it only takes effect if pixels.show() is called
-      strip.show();                                        // update to the NeoPixel Led Strip
-
-      delay(500);  // 500ms pause between each pixel
-    }
-  }
-  TFT.print("A preparar...)");
-  
-  //============================================================================PROGRESS BAR NEOPIXEL LED==================================================================================
-  
-
-  Serial.println("[EXCUTING] PREPARAR");
-*/
-unsigned long currentMillis = millis();
-
-  // Executa a função de piscar a cada intervalo definido
-  if (currentMillis - previousMillisBlink >= intervalBlink) {
-    blinkTask();
-    previousMillisBlink = currentMillis;
-  }
-
-  // Executa a função da melodia a cada intervalo definido
-  if (currentMillis - previousMillisMelody >= intervalMelody) {
-    melodyTask();
-    previousMillisMelody = currentMillis;
-  }
-
-  // Outras ações podem ser adicionadas aqui, sem bloquear o código principal
-
-}
-
-void executePRONTO() {
-  //============================================================FOR THE INFORMATION ON THE FTF=============================================================================================
-  TFT.print("Pronto...)");
-      // Aciona o buzzer na frequencia relativa ao Dó em Hz
-    tone(buzzer,261);
-     delay(10);
-
-  //============================================================================PROGRESS BAR NEOPIXEL LED==================================================================================
+void PREPARARneoPixel(void*) {
   strip.clear();
-  for (int pixel = 0; pixel < numNeopixel; pixel++) {    // for each pixel
-    strip.setPixelColor(pixel, strip.Color(0, 255, 0));  // it only takes effect if pixels.show() is called
-    strip.show();                                        // update to the NeoPixel Led Strip
+  strip.show();
+
+  for (int pixel = 0; pixel < numNeopixel; pixel++) {           
+    strip.setPixelColor(pixel, strip.Color(0, 255, 255));  
+    strip.show();                                           
+    delay(500);
   }
-  //all leds turn green
-  Serial.println("[EXCUTING] PRONTO");
+  strip.show();
 }
 
-void processState(int stateValue) {
-  currentState = static_cast<State>(stateValue);
-  Serial.print("Received State: ");
-  Serial.println(currentState);
+
+void PRONTOmusic(void*){
+  tone(piezzoPin,261);
+  delay(10);
 }
+void PRONTOneoPixel(void*){
+  strip.clear();
+  strip.show();
 
-void executarComando() {
-  switch (currentState) {
-    case ESPERA:
-      Serial.println("Executing [ESPERA] state");
-      executeESPERA();
-      break;
-
-    case ACEITE:
-      Serial.println("Executing [ACEITE] state");
-      executeACEITE();
-      break;
-
-    case PREPARAR:
-      Serial.println("Executing [PREPARAR] state");
-      executePREPARAR();
-      break;
-
-    case PRONTO:
-      Serial.println("Executing [PRONTO] state");
-      executePRONTO();
-      break;
-
-    default:
-      Serial.println("Unknown state!");
-      break;
+  for (int pixel = 0; pixel < numNeopixel; pixel++) {           
+    strip.setPixelColor(pixel, strip.Color(0, 255, 0));
   }
+  strip.show();  // update to the NeoPixel Led Strip
+  delay(1000);
 }
 
+//====================================================================================================================================================================================
+//====================================================================================================================================================================================
+//============================================================================FUNCTIONS EXECUTE=======================================================================================
+//====================================================================================================================================================================================
+//====================================================================================================================================================================================
 
+void executeESPERA() {  //TFT: "A esperar";NEOPIXEIS: Desligado;PIEZO: Desligado
+  vTaskSuspend(ProntoLED);            // To end the last tasks
+  vTaskSuspend(ProntoPiezzo);         // To end the last tasks
+
+  TFT.setTextColor(ST7735_WHITE);
+  TFT.setTextSize(2);
+  TFT.setCursor(0, 54);
+  TFT.print("A esperar...");  //FOR THE TFT
+
+  strip.clear();
+  strip.show();
+
+  Serial.println("[EXECUTING] ESPERA");
+}
+
+void executeACEITE() {  //TFT: "Aceite";NEOPIXEIS: Loading com leds vermelhos;PIEZO: Desligado
+  TFT.setTextColor(ST7735_WHITE);
+  TFT.setTextSize(2);
+  TFT.setCursor(0, 54);
+  TFT.print("Pedido aceite");  //FOR THE TFT
+
+  vTaskResume(AceiteLED);
+
+  Serial.println("[EXECUTING] ACEITE");
+}
+
+void executePREPARAR() {  //TFT: "A preparar";NEOPIXEIS: Loading com leds amarelos;PIEZO:Toca música para entreter o cliente
+  vTaskSuspend(AceiteLED);         // To end the last tasks
+  
+  TFT.setTextColor(ST7735_WHITE);
+  TFT.setTextSize(2);
+  TFT.setCursor(0, 54);
+
+  TFT.print("A esperar...");
+  vTaskResume(PrepararLED);
+  vTaskResume(PrepararPiezzo);
+}
+
+void executePRONTO() {  //TFT: "Pronto";NEOPIXEIS: Acendem todos verdes;PIEZO: Toque intermitente
+  vTaskSuspend(PrepararLED);            // To end the last tasks
+  vTaskSuspend(PrepararPiezzo);         // To end the last tasks
+  
+  TFT.setTextColor(ST7735_WHITE);
+  TFT.setTextSize(2);
+  TFT.setCursor(0, 54);
+  TFT.print("Pronto!)");
+}
+//====================================================================================================================================================================================
+//====================================================================================================================================================================================
+//============================================================================LOOP FUNCTION===========================================================================================
+//====================================================================================================================================================================================
+//====================================================================================================================================================================================
 
 void loop() {
-  // Check for a client
-  if (!client.connected()) {
-    client = server.available();
-    if (client) {
-      Serial.println("Client connected");
+  String buffer = "ESPERA";  
+  // listen for incoming clients
+  WiFiClient client = server.available();
+  if (client) {    Serial.println("RECEIVED SHIT");
+
+    if (client.connected()) {
+        for (int i = 0; i < 255; i++) {
+          char c = client.read();
+          if (c == -1) { break; } // If there isn't a byte available, function returns -1.
+
+          buffer += String(c);
+        }
     }
+    // close the connection:
+    client.stop();
   }
 
-  if (Serial.available() > 0) {
-    int receivedValue = Serial.read() - '0';
-    processState(receivedValue);
-  }
-  // Execute the corresponding function based on the current state
-  delay(10);
-  executarComando();
+    if (buffer == "ESPERA") {
+      Serial.println("Executing [ESPERA] state");
+      executeESPERA();
+    } else if (buffer == "ACEITE") {
+      Serial.println("Executing [ACEITE] state");
+      executeACEITE();
+    } else if (buffer == "PREPARAR") {
+      Serial.println("Executing [PREPARAR] state");
+      executePREPARAR();
+    } else if (buffer == "PRONTO") {
+      Serial.println("Executing [PRONTO] state");
+      executePRONTO();
+    } else {
+      Serial.println("Unknown state!");
+    }
 }
