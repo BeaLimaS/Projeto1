@@ -8,23 +8,17 @@
 //ssid and pass for the wireless connections (created by the ESP32 SERVER)
 const char *ssid = "Cozinha";
 const char *password = "123456789";
-const uint16_t port = 56789;
 
-const char *serverIP = "192.168.1.1";
-IPAddress local_IP(192, 168, 1, 1);
+IPAddress local_IP(192, 168, 1, 100);
 IPAddress gateway(192, 168, 1, 1);
 IPAddress subnet(255, 255, 255, 0);
 
 WiFiServer server(80);
 
-TaskHandle_t AceiteLED;
-//TaskHandle_t AceitePiezzo;
 
-TaskHandle_t PrepararLED;
-TaskHandle_t PrepararPiezzo;
+TaskHandle_t neoPixelMode;
+TaskHandle_t piezzoMode;
 
-TaskHandle_t ProntoLED;
-TaskHandle_t ProntoPiezzo;
 
 //pin declaration for the TFT
 #define cs    5    // Chip select line for TFT display
@@ -38,6 +32,8 @@ Adafruit_ST7735 TFT = Adafruit_ST7735(cs, dc, rst);
 #define neoPixelPin 13  // The ESP32 pin GPIO16 connected to NeoPixel
 #define numNeopixel 60  // The number of LEDs (pixels) on NeoPixel LED strip
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(numNeopixel, neoPixelPin, NEO_GRB + NEO_KHZ800);
+
+bool isPinLocked = false;
 
 //====================================================================================================================================================================================
 //====================================================================================================================================================================================
@@ -466,7 +462,7 @@ void setup() {
   // Initialize the TFT
   int16_t receibed=TFT.read16();
   TFT.initR(receibed);
-  TFT.setRotation(1);
+  TFT.setRotation(3);
   TFT.fillScreen(ST7735_BLACK);
  
 // Connect to WiFi
@@ -487,17 +483,12 @@ void setup() {
   // Initialize NeoPixel and set the brightness
   strip.begin();
   strip.setBrightness(1);
+  strip.clear();
+  strip.show();
 
 
-  xTaskCreatePinnedToCore(ACEITEneoPixel, "NeoPixelAceite", 1000, NULL, 1, &AceiteLED, tskNO_AFFINITY);
-  //xTaskCreatePinnedToCore(blinkTask, "NeoPixelAceite", 1000, NULL, 1, &AceitePiezzo, tskNO_AFFINITY);
-
-  xTaskCreatePinnedToCore(PREPARARneoPixel, "NeoPixelAceite", 1000, NULL, 1, &PrepararLED, tskNO_AFFINITY);
-  xTaskCreatePinnedToCore(PREPARARmusic, "NeoPixelAceite", 1000, NULL, 1, &PrepararPiezzo, tskNO_AFFINITY);
-
-  xTaskCreatePinnedToCore(PRONTOneoPixel, "NeoPixelAceite", 1000, NULL, 1, &ProntoLED, tskNO_AFFINITY);
-  xTaskCreatePinnedToCore(PRONTOmusic, "NeoPixelAceite", 1000, NULL, 1, &ProntoPiezzo, tskNO_AFFINITY);
-
+  xTaskCreatePinnedToCore(neoPixelMODO, "NeoPixel", 1000, NULL, 1, &neoPixelMode, tskNO_AFFINITY);
+  xTaskCreatePinnedToCore(piezzoMODO, "Piezzo", 1000, NULL, 1, &piezzoMode, tskNO_AFFINITY);
   //vTaskSuspend(); para suspender a task
 }
 
@@ -507,68 +498,59 @@ void setup() {
 //====================================================================================================================================================================================
 //====================================================================================================================================================================================
 
+String lastState;// = "PRONTO"
 
-void ACEITEneoPixel(void*) {
-  strip.clear();
-  strip.show();
-
-  for (int pixel = 0; pixel < numNeopixel; pixel++) {           
-    strip.setPixelColor(pixel, strip.Color(255, 0, 0));  
-    strip.show();                                           
-    delay(500);
-  }
-  strip.show();
-}
-
-
-void PREPARARmusic(void*) {
+void piezzoMODO(void*) {
+  while(true){
+  if(lastState == "PREPARAR"){
   // play We Wish You a Merry Christmas melody
   playMelody(melody_christmas, notes_christmas, wholenote_christmas);
-  delay(3000);
+  delay(1000);
 
   // play Game of Thrones melody
   playMelody(melody_game_of_thrones, notes_game_of_thrones, wholenote_game_of_thrones);
   // wait for 3 seconds
-  delay(3000);
+  delay(1000);
 
   // play Mario
   playMelody(melody_mario, notes_mario, wholenote_mario);
-  delay(3000);
+  delay(1000);
 
   // play Tetris
   playMelody(melody_tetris, notes_tetris, wholenote_tetris);
-  delay(3000);
+  delay(1000);
 
   // play Never gonna give you up
   playMelody(melody_never_gonna_give_you_up, notes_never_gonna_give_you_up, wholenote_never_gonna_give_you_up);
-  delay(3000);
+  delay(1000);
+
+  }else if(lastState == "PRONTO"){
+    tone(piezzoPin,261);
+    delay(10);}
+  }
 }
-void PREPARARneoPixel(void*) {
+
+void neoPixelMODO(void*) {
+  while(true){
+  if(lastState == "PREPARAR"){
   strip.clear();
   strip.show();
 
   for (int pixel = 0; pixel < numNeopixel; pixel++) {           
-    strip.setPixelColor(pixel, strip.Color(0, 255, 255));  
+    strip.setPixelColor(pixel, strip.Color(255, 255, 0));  
     strip.show();                                           
     delay(500);
   }
   strip.show();
-}
 
-
-void PRONTOmusic(void*){
-  tone(piezzoPin,261);
-  delay(10);
-}
-void PRONTOneoPixel(void*){
-  strip.clear();
-  strip.show();
+  }else if(lastState == "PRONTO"){
 
   for (int pixel = 0; pixel < numNeopixel; pixel++) {           
     strip.setPixelColor(pixel, strip.Color(0, 255, 0));
   }
   strip.show();  // update to the NeoPixel Led Strip
-  delay(1000);
+  }
+  }
 }
 
 //====================================================================================================================================================================================
@@ -578,9 +560,10 @@ void PRONTOneoPixel(void*){
 //====================================================================================================================================================================================
 
 void executeESPERA() {  //TFT: "A esperar";NEOPIXEIS: Desligado;PIEZO: Desligado
-  vTaskSuspend(ProntoLED);            // To end the last tasks
-  vTaskSuspend(ProntoPiezzo);         // To end the last tasks
+  vTaskSuspend(neoPixelMode);            // To end the last tasks
+  vTaskSuspend(piezzoMode);
 
+  TFT.fillScreen(ST7735_BLACK);
   TFT.setTextColor(ST7735_WHITE);
   TFT.setTextSize(2);
   TFT.setCursor(0, 54);
@@ -593,36 +576,49 @@ void executeESPERA() {  //TFT: "A esperar";NEOPIXEIS: Desligado;PIEZO: Desligado
 }
 
 void executeACEITE() {  //TFT: "Aceite";NEOPIXEIS: Loading com leds vermelhos;PIEZO: Desligado
+  TFT.fillScreen(ST7735_BLACK);
   TFT.setTextColor(ST7735_WHITE);
   TFT.setTextSize(2);
   TFT.setCursor(0, 54);
   TFT.print("Pedido aceite");  //FOR THE TFT
 
-  vTaskResume(AceiteLED);
+  strip.clear();
+  strip.show();
 
+  for (int pixel = 0; pixel < numNeopixel; pixel++) {           
+    strip.setPixelColor(pixel, strip.Color(255, 0, 0));  
+    strip.show();                                           
+    delay(500);
+  }
+  strip.show();
   Serial.println("[EXECUTING] ACEITE");
 }
 
 void executePREPARAR() {  //TFT: "A preparar";NEOPIXEIS: Loading com leds amarelos;PIEZO:Toca música para entreter o cliente
-  vTaskSuspend(AceiteLED);         // To end the last tasks
-  
+
   TFT.setTextColor(ST7735_WHITE);
   TFT.setTextSize(2);
   TFT.setCursor(0, 54);
 
-  TFT.print("A esperar...");
-  vTaskResume(PrepararLED);
-  vTaskResume(PrepararPiezzo);
+  TFT.print("A preparar...");
+
+  vTaskResume(neoPixelMode);
+  vTaskResume(piezzoMode);
 }
 
 void executePRONTO() {  //TFT: "Pronto";NEOPIXEIS: Acendem todos verdes;PIEZO: Toque intermitente
-  vTaskSuspend(PrepararLED);            // To end the last tasks
-  vTaskSuspend(PrepararPiezzo);         // To end the last tasks
+  vTaskSuspend(neoPixelMode);            // To end the last tasks
+  vTaskSuspend(piezzoMode);         // To end the last tasks
   
+  //TFT.fillScreen(ST7735_BLACK);
   TFT.setTextColor(ST7735_WHITE);
   TFT.setTextSize(2);
   TFT.setCursor(0, 54);
-  TFT.print("Pronto!)");
+  TFT.print("Pronto!");
+
+  vTaskResume(neoPixelMode);
+  vTaskResume(piezzoMode);
+
 }
 //====================================================================================================================================================================================
 //====================================================================================================================================================================================
@@ -631,33 +627,36 @@ void executePRONTO() {  //TFT: "Pronto";NEOPIXEIS: Acendem todos verdes;PIEZO: T
 //====================================================================================================================================================================================
 
 void loop() {
-  String buffer = "ESPERA";  
+  String currentState;  
   // listen for incoming clients
   WiFiClient client = server.available();
-  if (client) {    Serial.println("RECEIVED SHIT");
+  if (client) {
 
     if (client.connected()) {
         for (int i = 0; i < 255; i++) {
           char c = client.read();
-          if (c == -1) { break; } // If there isn't a byte available, function returns -1.
+          if (!('A' <= c && c <= 'Z')) { break; } // If there isn't a byte available, function returns -1.
 
-          buffer += String(c);
+          currentState += String(c);
         }
     }
-    // close the connection:
+    client.write(currentState.c_str());
     client.stop();
+    if(currentState != lastState){
+      lastState = currentState;
+    }
   }
 
-    if (buffer == "ESPERA") {
+    if (lastState.indexOf("ESPERA") >= 0) {
       Serial.println("Executing [ESPERA] state");
       executeESPERA();
-    } else if (buffer == "ACEITE") {
+    } else if (lastState.indexOf("ACEITE") >= 0) {
       Serial.println("Executing [ACEITE] state");
       executeACEITE();
-    } else if (buffer == "PREPARAR") {
+    } else if (lastState.indexOf("PREPARAR") >= 0) {
       Serial.println("Executing [PREPARAR] state");
       executePREPARAR();
-    } else if (buffer == "PRONTO") {
+    } else if (lastState.indexOf("PRONTO") >= 0) {
       Serial.println("Executing [PRONTO] state");
       executePRONTO();
     } else {
