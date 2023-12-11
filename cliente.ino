@@ -1,13 +1,14 @@
 #include <WiFi.h>               //library for the wireless connections
 #include <Adafruit_ST7735.h>    //library for the TFT
-#include <Adafruit_NeoPixel.h>  //library for the neopixel led
+//#include <Adafruit_NeoPixel.h>  //library for the neopixel led
+#include <NeoPixelBus.h>
 #include <TaskScheduler.h>
 
 #define piezzoPin 27  //pin for the Piezzo
 
 //ssid and pass for the wireless connections (created by the ESP32 SERVER)
 const char *ssid = "Cozinha";
-const char *password = "123456789";
+const char *password = "123";
 
 IPAddress local_IP(192, 168, 1, 100);
 IPAddress gateway(192, 168, 1, 1);
@@ -18,6 +19,7 @@ WiFiServer server(80);
 
 TaskHandle_t neoPixelMode;
 TaskHandle_t piezzoMode;
+
 
 
 //pin declaration for the TFT
@@ -31,8 +33,8 @@ Adafruit_ST7735 TFT = Adafruit_ST7735(cs, dc, rst);
 //pin declaration for the Neopixels
 #define neoPixelPin 13  // The ESP32 pin GPIO16 connected to NeoPixel
 #define numNeopixel 60  // The number of LEDs (pixels) on NeoPixel LED strip
-Adafruit_NeoPixel strip = Adafruit_NeoPixel(numNeopixel, neoPixelPin, NEO_GRB + NEO_KHZ800);
-
+//Adafruit_NeoPixel strip = Adafruit_NeoPixel(numNeopixel, neoPixelPin, NEO_GRB + NEO_KHZ800);
+NeoPixelBus<NeoGrbFeature, NeoEsp32I2s1X8Ws2812xMethod> strip(numNeopixel, neoPixelPin);
 bool isPinLocked = false;
 
 //====================================================================================================================================================================================
@@ -145,291 +147,296 @@ int wholenote_tetris = (60000 * 4) / tempo_tetris;
 int wholenote_never_gonna_give_you_up = (60000 * 4) / tempo_never_gonna_give_you_up;
 
 int melody_game_of_thrones[] = { NOTE_G4, 8, NOTE_C4, 8, NOTE_DS4, 16, NOTE_F4, 16, NOTE_G4, 8, NOTE_C4, 8, NOTE_DS4, 16, NOTE_F4, 16, //1
-  NOTE_G4, 8, NOTE_C4, 8, NOTE_DS4, 16, NOTE_F4, 16, NOTE_G4, 8, NOTE_C4, 8, NOTE_DS4, 16, NOTE_F4, 16,
-  NOTE_G4, 8, NOTE_C4, 8, NOTE_E4, 16, NOTE_F4, 16, NOTE_G4, 8, NOTE_C4, 8, NOTE_E4, 16, NOTE_F4, 16,
-  NOTE_G4, 8, NOTE_C4, 8, NOTE_E4, 16, NOTE_F4, 16, NOTE_G4, 8, NOTE_C4, 8, NOTE_E4, 16, NOTE_F4, 16,
-  NOTE_G4, -4, NOTE_C4, -4, //5
+                                 NOTE_G4, 8, NOTE_C4, 8, NOTE_DS4, 16, NOTE_F4, 16, NOTE_G4, 8, NOTE_C4, 8, NOTE_DS4, 16, NOTE_F4, 16,
+                                 NOTE_G4, 8, NOTE_C4, 8, NOTE_E4, 16, NOTE_F4, 16, NOTE_G4, 8, NOTE_C4, 8, NOTE_E4, 16, NOTE_F4, 16,
+                                 NOTE_G4, 8, NOTE_C4, 8, NOTE_E4, 16, NOTE_F4, 16, NOTE_G4, 8, NOTE_C4, 8, NOTE_E4, 16, NOTE_F4, 16,
+                                 NOTE_G4, -4, NOTE_C4, -4, //5
 
-  NOTE_DS4, 16, NOTE_F4, 16, NOTE_G4, 4, NOTE_C4, 4, NOTE_DS4, 16, NOTE_F4, 16, //6
-  NOTE_D4, -1, //7 and 8
-  NOTE_F4, -4, NOTE_AS3, -4,
-  NOTE_DS4, 16, NOTE_D4, 16, NOTE_F4, 4, NOTE_AS3, -4,
-  NOTE_DS4, 16, NOTE_D4, 16, NOTE_C4, -1, //11 and 12
+                                 NOTE_DS4, 16, NOTE_F4, 16, NOTE_G4, 4, NOTE_C4, 4, NOTE_DS4, 16, NOTE_F4, 16, //6
+                                 NOTE_D4, -1, //7 and 8
+                                 NOTE_F4, -4, NOTE_AS3, -4,
+                                 NOTE_DS4, 16, NOTE_D4, 16, NOTE_F4, 4, NOTE_AS3, -4,
+                                 NOTE_DS4, 16, NOTE_D4, 16, NOTE_C4, -1, //11 and 12
 
-  //repeats from 5
-  NOTE_G4, -4, NOTE_C4, -4, //5
+                                 //repeats from 5
+                                 NOTE_G4, -4, NOTE_C4, -4, //5
 
-  NOTE_DS4, 16, NOTE_F4, 16, NOTE_G4, 4, NOTE_C4, 4, NOTE_DS4, 16, NOTE_F4, 16, //6
-  NOTE_D4, -1, //7 and 8
-  NOTE_F4, -4, NOTE_AS3, -4,
-  NOTE_DS4, 16, NOTE_D4, 16, NOTE_F4, 4, NOTE_AS3, -4,
-  NOTE_DS4, 16, NOTE_D4, 16, NOTE_C4, -1, //11 and 12
-  NOTE_G4, -4, NOTE_C4, -4,
-  NOTE_DS4, 16, NOTE_F4, 16, NOTE_G4, 4,  NOTE_C4, 4, NOTE_DS4, 16, NOTE_F4, 16,
+                                 NOTE_DS4, 16, NOTE_F4, 16, NOTE_G4, 4, NOTE_C4, 4, NOTE_DS4, 16, NOTE_F4, 16, //6
+                                 NOTE_D4, -1, //7 and 8
+                                 NOTE_F4, -4, NOTE_AS3, -4,
+                                 NOTE_DS4, 16, NOTE_D4, 16, NOTE_F4, 4, NOTE_AS3, -4,
+                                 NOTE_DS4, 16, NOTE_D4, 16, NOTE_C4, -1, //11 and 12
+                                 NOTE_G4, -4, NOTE_C4, -4,
+                                 NOTE_DS4, 16, NOTE_F4, 16, NOTE_G4, 4,  NOTE_C4, 4, NOTE_DS4, 16, NOTE_F4, 16,
 
-  NOTE_D4, -2, //15
-  NOTE_F4, -4, NOTE_AS3, -4,
-  NOTE_D4, -8, NOTE_DS4, -8, NOTE_D4, -8, NOTE_AS3, -8,
-  NOTE_C4, -1,
-  NOTE_C5, -2,
-  NOTE_AS4, -2,
-  NOTE_C4, -2,
-  NOTE_G4, -2,
-  NOTE_DS4, -2,
-  NOTE_DS4, -4, NOTE_F4, -4,
-  NOTE_G4, -1,
+                                 NOTE_D4, -2, //15
+                                 NOTE_F4, -4, NOTE_AS3, -4,
+                                 NOTE_D4, -8, NOTE_DS4, -8, NOTE_D4, -8, NOTE_AS3, -8,
+                                 NOTE_C4, -1,
+                                 NOTE_C5, -2,
+                                 NOTE_AS4, -2,
+                                 NOTE_C4, -2,
+                                 NOTE_G4, -2,
+                                 NOTE_DS4, -2,
+                                 NOTE_DS4, -4, NOTE_F4, -4,
+                                 NOTE_G4, -1,
 
-  NOTE_C5, -2, //28
-  NOTE_AS4, -2,
-  NOTE_C4, -2,
-  NOTE_G4, -2,
-  NOTE_DS4, -2,
-  NOTE_DS4, -4, NOTE_D4, -4,
-  NOTE_C5, 8, NOTE_G4, 8, NOTE_GS4, 16, NOTE_AS4, 16, NOTE_C5, 8, NOTE_G4, 8, NOTE_GS4, 16, NOTE_AS4, 16,
-  NOTE_C5, 8, NOTE_G4, 8, NOTE_GS4, 16, NOTE_AS4, 16, NOTE_C5, 8, NOTE_G4, 8, NOTE_GS4, 16, NOTE_AS4, 16,
+                                 NOTE_C5, -2, //28
+                                 NOTE_AS4, -2,
+                                 NOTE_C4, -2,
+                                 NOTE_G4, -2,
+                                 NOTE_DS4, -2,
+                                 NOTE_DS4, -4, NOTE_D4, -4,
+                                 NOTE_C5, 8, NOTE_G4, 8, NOTE_GS4, 16, NOTE_AS4, 16, NOTE_C5, 8, NOTE_G4, 8, NOTE_GS4, 16, NOTE_AS4, 16,
+                                 NOTE_C5, 8, NOTE_G4, 8, NOTE_GS4, 16, NOTE_AS4, 16, NOTE_C5, 8, NOTE_G4, 8, NOTE_GS4, 16, NOTE_AS4, 16,
 
-  REST, 4, NOTE_GS5, 16, NOTE_AS5, 16, NOTE_C6, 8, NOTE_G5, 8, NOTE_GS5, 16, NOTE_AS5, 16,
-  NOTE_C6, 8, NOTE_G5, 16, NOTE_GS5, 16, NOTE_AS5, 16, NOTE_C6, 8, NOTE_G5, 8, NOTE_GS5, 16, NOTE_AS5, 16,};
+                                 REST, 4, NOTE_GS5, 16, NOTE_AS5, 16, NOTE_C6, 8, NOTE_G5, 8, NOTE_GS5, 16, NOTE_AS5, 16,
+                                 NOTE_C6, 8, NOTE_G5, 16, NOTE_GS5, 16, NOTE_AS5, 16, NOTE_C6, 8, NOTE_G5, 8, NOTE_GS5, 16, NOTE_AS5, 16,
+                               };
 int melody_christmas[] = {NOTE_C5, 4, //1
-  NOTE_F5, 4, NOTE_F5, 8, NOTE_G5, 8, NOTE_F5, 8, NOTE_E5, 8,
-  NOTE_D5, 4, NOTE_D5, 4, NOTE_D5, 4,
-  NOTE_G5, 4, NOTE_G5, 8, NOTE_A5, 8, NOTE_G5, 8, NOTE_F5, 8,
-  NOTE_E5, 4, NOTE_C5, 4, NOTE_C5, 4,
-  NOTE_A5, 4, NOTE_A5, 8, NOTE_AS5, 8, NOTE_A5, 8, NOTE_G5, 8,
-  NOTE_F5, 4, NOTE_D5, 4, NOTE_C5, 8, NOTE_C5, 8,
-  NOTE_D5, 4, NOTE_G5, 4, NOTE_E5, 4,
+                          NOTE_F5, 4, NOTE_F5, 8, NOTE_G5, 8, NOTE_F5, 8, NOTE_E5, 8,
+                          NOTE_D5, 4, NOTE_D5, 4, NOTE_D5, 4,
+                          NOTE_G5, 4, NOTE_G5, 8, NOTE_A5, 8, NOTE_G5, 8, NOTE_F5, 8,
+                          NOTE_E5, 4, NOTE_C5, 4, NOTE_C5, 4,
+                          NOTE_A5, 4, NOTE_A5, 8, NOTE_AS5, 8, NOTE_A5, 8, NOTE_G5, 8,
+                          NOTE_F5, 4, NOTE_D5, 4, NOTE_C5, 8, NOTE_C5, 8,
+                          NOTE_D5, 4, NOTE_G5, 4, NOTE_E5, 4,
 
-  NOTE_F5, 2, NOTE_C5, 4, //8
-  NOTE_F5, 4, NOTE_F5, 8, NOTE_G5, 8, NOTE_F5, 8, NOTE_E5, 8,
-  NOTE_D5, 4, NOTE_D5, 4, NOTE_D5, 4,
-  NOTE_G5, 4, NOTE_G5, 8, NOTE_A5, 8, NOTE_G5, 8, NOTE_F5, 8,
-  NOTE_E5, 4, NOTE_C5, 4, NOTE_C5, 4,
-  NOTE_A5, 4, NOTE_A5, 8, NOTE_AS5, 8, NOTE_A5, 8, NOTE_G5, 8,
-  NOTE_F5, 4, NOTE_D5, 4, NOTE_C5, 8, NOTE_C5, 8,
-  NOTE_D5, 4, NOTE_G5, 4, NOTE_E5, 4,
-  NOTE_F5, 2, NOTE_C5, 4,
+                          NOTE_F5, 2, NOTE_C5, 4, //8
+                          NOTE_F5, 4, NOTE_F5, 8, NOTE_G5, 8, NOTE_F5, 8, NOTE_E5, 8,
+                          NOTE_D5, 4, NOTE_D5, 4, NOTE_D5, 4,
+                          NOTE_G5, 4, NOTE_G5, 8, NOTE_A5, 8, NOTE_G5, 8, NOTE_F5, 8,
+                          NOTE_E5, 4, NOTE_C5, 4, NOTE_C5, 4,
+                          NOTE_A5, 4, NOTE_A5, 8, NOTE_AS5, 8, NOTE_A5, 8, NOTE_G5, 8,
+                          NOTE_F5, 4, NOTE_D5, 4, NOTE_C5, 8, NOTE_C5, 8,
+                          NOTE_D5, 4, NOTE_G5, 4, NOTE_E5, 4,
+                          NOTE_F5, 2, NOTE_C5, 4,
 
-  NOTE_F5, 4, NOTE_F5, 4, NOTE_F5, 4, //17
-  NOTE_E5, 2, NOTE_E5, 4,
-  NOTE_F5, 4, NOTE_E5, 4, NOTE_D5, 4,
-  NOTE_C5, 2, NOTE_A5, 4,
-  NOTE_AS5, 4, NOTE_A5, 4, NOTE_G5, 4,
-  NOTE_C6, 4, NOTE_C5, 4, NOTE_C5, 8, NOTE_C5, 8,
-  NOTE_D5, 4, NOTE_G5, 4, NOTE_E5, 4,
-  NOTE_F5, 2, NOTE_C5, 4,
-  NOTE_F5, 4, NOTE_F5, 8, NOTE_G5, 8, NOTE_F5, 8, NOTE_E5, 8,
-  NOTE_D5, 4, NOTE_D5, 4, NOTE_D5, 4,
+                          NOTE_F5, 4, NOTE_F5, 4, NOTE_F5, 4, //17
+                          NOTE_E5, 2, NOTE_E5, 4,
+                          NOTE_F5, 4, NOTE_E5, 4, NOTE_D5, 4,
+                          NOTE_C5, 2, NOTE_A5, 4,
+                          NOTE_AS5, 4, NOTE_A5, 4, NOTE_G5, 4,
+                          NOTE_C6, 4, NOTE_C5, 4, NOTE_C5, 8, NOTE_C5, 8,
+                          NOTE_D5, 4, NOTE_G5, 4, NOTE_E5, 4,
+                          NOTE_F5, 2, NOTE_C5, 4,
+                          NOTE_F5, 4, NOTE_F5, 8, NOTE_G5, 8, NOTE_F5, 8, NOTE_E5, 8,
+                          NOTE_D5, 4, NOTE_D5, 4, NOTE_D5, 4,
 
-  NOTE_G5, 4, NOTE_G5, 8, NOTE_A5, 8, NOTE_G5, 8, NOTE_F5, 8, //27
-  NOTE_E5, 4, NOTE_C5, 4, NOTE_C5, 4,
-  NOTE_A5, 4, NOTE_A5, 8, NOTE_AS5, 8, NOTE_A5, 8, NOTE_G5, 8,
-  NOTE_F5, 4, NOTE_D5, 4, NOTE_C5, 8, NOTE_C5, 8,
-  NOTE_D5, 4, NOTE_G5, 4, NOTE_E5, 4,
-  NOTE_F5, 2, NOTE_C5, 4,
-  NOTE_F5, 4, NOTE_F5, 4, NOTE_F5, 4,
-  NOTE_E5, 2, NOTE_E5, 4,
-  NOTE_F5, 4, NOTE_E5, 4, NOTE_D5, 4,
+                          NOTE_G5, 4, NOTE_G5, 8, NOTE_A5, 8, NOTE_G5, 8, NOTE_F5, 8, //27
+                          NOTE_E5, 4, NOTE_C5, 4, NOTE_C5, 4,
+                          NOTE_A5, 4, NOTE_A5, 8, NOTE_AS5, 8, NOTE_A5, 8, NOTE_G5, 8,
+                          NOTE_F5, 4, NOTE_D5, 4, NOTE_C5, 8, NOTE_C5, 8,
+                          NOTE_D5, 4, NOTE_G5, 4, NOTE_E5, 4,
+                          NOTE_F5, 2, NOTE_C5, 4,
+                          NOTE_F5, 4, NOTE_F5, 4, NOTE_F5, 4,
+                          NOTE_E5, 2, NOTE_E5, 4,
+                          NOTE_F5, 4, NOTE_E5, 4, NOTE_D5, 4,
 
-  NOTE_C5, 2, NOTE_A5, 4, //36
-  NOTE_AS5, 4, NOTE_A5, 4, NOTE_G5, 4,
-  NOTE_C6, 4, NOTE_C5, 4, NOTE_C5, 8, NOTE_C5, 8,
-  NOTE_D5, 4, NOTE_G5, 4, NOTE_E5, 4,
-  NOTE_F5, 2, NOTE_C5, 4,
-  NOTE_F5, 4, NOTE_F5, 8, NOTE_G5, 8, NOTE_F5, 8, NOTE_E5, 8,
-  NOTE_D5, 4, NOTE_D5, 4, NOTE_D5, 4,
-  NOTE_G5, 4, NOTE_G5, 8, NOTE_A5, 8, NOTE_G5, 8, NOTE_F5, 8,
-  NOTE_E5, 4, NOTE_C5, 4, NOTE_C5, 4,
+                          NOTE_C5, 2, NOTE_A5, 4, //36
+                          NOTE_AS5, 4, NOTE_A5, 4, NOTE_G5, 4,
+                          NOTE_C6, 4, NOTE_C5, 4, NOTE_C5, 8, NOTE_C5, 8,
+                          NOTE_D5, 4, NOTE_G5, 4, NOTE_E5, 4,
+                          NOTE_F5, 2, NOTE_C5, 4,
+                          NOTE_F5, 4, NOTE_F5, 8, NOTE_G5, 8, NOTE_F5, 8, NOTE_E5, 8,
+                          NOTE_D5, 4, NOTE_D5, 4, NOTE_D5, 4,
+                          NOTE_G5, 4, NOTE_G5, 8, NOTE_A5, 8, NOTE_G5, 8, NOTE_F5, 8,
+                          NOTE_E5, 4, NOTE_C5, 4, NOTE_C5, 4,
 
-  NOTE_A5, 4, NOTE_A5, 8, NOTE_AS5, 8, NOTE_A5, 8, NOTE_G5, 8, //45
-  NOTE_F5, 4, NOTE_D5, 4, NOTE_C5, 8, NOTE_C5, 8,
-  NOTE_D5, 4, NOTE_G5, 4, NOTE_E5, 4,
-  NOTE_F5, 2, NOTE_C5, 4,
-  NOTE_F5, 4, NOTE_F5, 8, NOTE_G5, 8, NOTE_F5, 8, NOTE_E5, 8,
-  NOTE_D5, 4, NOTE_D5, 4, NOTE_D5, 4,
-  NOTE_G5, 4, NOTE_G5, 8, NOTE_A5, 8, NOTE_G5, 8, NOTE_F5, 8,
-  NOTE_E5, 4, NOTE_C5, 4, NOTE_C5, 4,
+                          NOTE_A5, 4, NOTE_A5, 8, NOTE_AS5, 8, NOTE_A5, 8, NOTE_G5, 8, //45
+                          NOTE_F5, 4, NOTE_D5, 4, NOTE_C5, 8, NOTE_C5, 8,
+                          NOTE_D5, 4, NOTE_G5, 4, NOTE_E5, 4,
+                          NOTE_F5, 2, NOTE_C5, 4,
+                          NOTE_F5, 4, NOTE_F5, 8, NOTE_G5, 8, NOTE_F5, 8, NOTE_E5, 8,
+                          NOTE_D5, 4, NOTE_D5, 4, NOTE_D5, 4,
+                          NOTE_G5, 4, NOTE_G5, 8, NOTE_A5, 8, NOTE_G5, 8, NOTE_F5, 8,
+                          NOTE_E5, 4, NOTE_C5, 4, NOTE_C5, 4,
 
-  NOTE_A5, 4, NOTE_A5, 8, NOTE_AS5, 8, NOTE_A5, 8, NOTE_G5, 8, //53
-  NOTE_F5, 4, NOTE_D5, 4, NOTE_C5, 8, NOTE_C5, 8,
-  NOTE_D5, 4, NOTE_G5, 4, NOTE_E5, 4,
-  NOTE_F5, 2, REST, 4};
+                          NOTE_A5, 4, NOTE_A5, 8, NOTE_AS5, 8, NOTE_A5, 8, NOTE_G5, 8, //53
+                          NOTE_F5, 4, NOTE_D5, 4, NOTE_C5, 8, NOTE_C5, 8,
+                          NOTE_D5, 4, NOTE_G5, 4, NOTE_E5, 4,
+                          NOTE_F5, 2, REST, 4
+                         };
 int melody_mario[] = { NOTE_E5, 8, NOTE_E5, 8, REST, 8, NOTE_E5, 8, REST, 8, NOTE_C5, 8, NOTE_E5, 8, //1
-  NOTE_G5, 4, REST, 4, NOTE_G4, 8, REST, 4,
-  NOTE_C5, -4, NOTE_G4, 8, REST, 4, NOTE_E4, -4, // 3
-  NOTE_A4, 4, NOTE_B4, 4, NOTE_AS4, 8, NOTE_A4, 4,
-  NOTE_G4, -8, NOTE_E5, -8, NOTE_G5, -8, NOTE_A5, 4, NOTE_F5, 8, NOTE_G5, 8,
-  REST, 8, NOTE_E5, 4, NOTE_C5, 8, NOTE_D5, 8, NOTE_B4, -4,
-  NOTE_C5, -4, NOTE_G4, 8, REST, 4, NOTE_E4, -4, // repeats from 3
-  NOTE_A4, 4, NOTE_B4, 4, NOTE_AS4, 8, NOTE_A4, 4,
-  NOTE_G4, -8, NOTE_E5, -8, NOTE_G5, -8, NOTE_A5, 4, NOTE_F5, 8, NOTE_G5, 8,
-  REST, 8, NOTE_E5, 4, NOTE_C5, 8, NOTE_D5, 8, NOTE_B4, -4,
+                       NOTE_G5, 4, REST, 4, NOTE_G4, 8, REST, 4,
+                       NOTE_C5, -4, NOTE_G4, 8, REST, 4, NOTE_E4, -4, // 3
+                       NOTE_A4, 4, NOTE_B4, 4, NOTE_AS4, 8, NOTE_A4, 4,
+                       NOTE_G4, -8, NOTE_E5, -8, NOTE_G5, -8, NOTE_A5, 4, NOTE_F5, 8, NOTE_G5, 8,
+                       REST, 8, NOTE_E5, 4, NOTE_C5, 8, NOTE_D5, 8, NOTE_B4, -4,
+                       NOTE_C5, -4, NOTE_G4, 8, REST, 4, NOTE_E4, -4, // repeats from 3
+                       NOTE_A4, 4, NOTE_B4, 4, NOTE_AS4, 8, NOTE_A4, 4,
+                       NOTE_G4, -8, NOTE_E5, -8, NOTE_G5, -8, NOTE_A5, 4, NOTE_F5, 8, NOTE_G5, 8,
+                       REST, 8, NOTE_E5, 4, NOTE_C5, 8, NOTE_D5, 8, NOTE_B4, -4,
 
 
-  REST, 4, NOTE_G5, 8, NOTE_FS5, 8, NOTE_F5, 8, NOTE_DS5, 4, NOTE_E5, 8, //7
-  REST, 8, NOTE_GS4, 8, NOTE_A4, 8, NOTE_C4, 8, REST, 8, NOTE_A4, 8, NOTE_C5, 8, NOTE_D5, 8,
-  REST, 4, NOTE_DS5, 4, REST, 8, NOTE_D5, -4,
-  NOTE_C5, 2, REST, 2,
+                       REST, 4, NOTE_G5, 8, NOTE_FS5, 8, NOTE_F5, 8, NOTE_DS5, 4, NOTE_E5, 8, //7
+                       REST, 8, NOTE_GS4, 8, NOTE_A4, 8, NOTE_C4, 8, REST, 8, NOTE_A4, 8, NOTE_C5, 8, NOTE_D5, 8,
+                       REST, 4, NOTE_DS5, 4, REST, 8, NOTE_D5, -4,
+                       NOTE_C5, 2, REST, 2,
 
-  REST, 4, NOTE_G5, 8, NOTE_FS5, 8, NOTE_F5, 8, NOTE_DS5, 4, NOTE_E5, 8, //repeats from 7
-  REST, 8, NOTE_GS4, 8, NOTE_A4, 8, NOTE_C4, 8, REST, 8, NOTE_A4, 8, NOTE_C5, 8, NOTE_D5, 8,
-  REST, 4, NOTE_DS5, 4, REST, 8, NOTE_D5, -4,
-  NOTE_C5, 2, REST, 2,
+                       REST, 4, NOTE_G5, 8, NOTE_FS5, 8, NOTE_F5, 8, NOTE_DS5, 4, NOTE_E5, 8, //repeats from 7
+                       REST, 8, NOTE_GS4, 8, NOTE_A4, 8, NOTE_C4, 8, REST, 8, NOTE_A4, 8, NOTE_C5, 8, NOTE_D5, 8,
+                       REST, 4, NOTE_DS5, 4, REST, 8, NOTE_D5, -4,
+                       NOTE_C5, 2, REST, 2,
 
-  NOTE_C5, 8, NOTE_C5, 4, NOTE_C5, 8, REST, 8, NOTE_C5, 8, NOTE_D5, 4, //11
-  NOTE_E5, 8, NOTE_C5, 4, NOTE_A4, 8, NOTE_G4, 2,
+                       NOTE_C5, 8, NOTE_C5, 4, NOTE_C5, 8, REST, 8, NOTE_C5, 8, NOTE_D5, 4, //11
+                       NOTE_E5, 8, NOTE_C5, 4, NOTE_A4, 8, NOTE_G4, 2,
 
-  NOTE_C5, 8, NOTE_C5, 4, NOTE_C5, 8, REST, 8, NOTE_C5, 8, NOTE_D5, 8, NOTE_E5, 8, //13
-  REST, 1,
-  NOTE_C5, 8, NOTE_C5, 4, NOTE_C5, 8, REST, 8, NOTE_C5, 8, NOTE_D5, 4,
-  NOTE_E5, 8, NOTE_C5, 4, NOTE_A4, 8, NOTE_G4, 2,
-  NOTE_E5, 8, NOTE_E5, 8, REST, 8, NOTE_E5, 8, REST, 8, NOTE_C5, 8, NOTE_E5, 4,
-  NOTE_G5, 4, REST, 4, NOTE_G4, 4, REST, 4,
-  NOTE_C5, -4, NOTE_G4, 8, REST, 4, NOTE_E4, -4, // 19
+                       NOTE_C5, 8, NOTE_C5, 4, NOTE_C5, 8, REST, 8, NOTE_C5, 8, NOTE_D5, 8, NOTE_E5, 8, //13
+                       REST, 1,
+                       NOTE_C5, 8, NOTE_C5, 4, NOTE_C5, 8, REST, 8, NOTE_C5, 8, NOTE_D5, 4,
+                       NOTE_E5, 8, NOTE_C5, 4, NOTE_A4, 8, NOTE_G4, 2,
+                       NOTE_E5, 8, NOTE_E5, 8, REST, 8, NOTE_E5, 8, REST, 8, NOTE_C5, 8, NOTE_E5, 4,
+                       NOTE_G5, 4, REST, 4, NOTE_G4, 4, REST, 4,
+                       NOTE_C5, -4, NOTE_G4, 8, REST, 4, NOTE_E4, -4, // 19
 
-  NOTE_A4, 4, NOTE_B4, 4, NOTE_AS4, 8, NOTE_A4, 4,
-  NOTE_G4, -8, NOTE_E5, -8, NOTE_G5, -8, NOTE_A5, 4, NOTE_F5, 8, NOTE_G5, 8,
-  REST, 8, NOTE_E5, 4, NOTE_C5, 8, NOTE_D5, 8, NOTE_B4, -4,
+                       NOTE_A4, 4, NOTE_B4, 4, NOTE_AS4, 8, NOTE_A4, 4,
+                       NOTE_G4, -8, NOTE_E5, -8, NOTE_G5, -8, NOTE_A5, 4, NOTE_F5, 8, NOTE_G5, 8,
+                       REST, 8, NOTE_E5, 4, NOTE_C5, 8, NOTE_D5, 8, NOTE_B4, -4,
 
-  NOTE_C5, -4, NOTE_G4, 8, REST, 4, NOTE_E4, -4, // repeats from 19
-  NOTE_A4, 4, NOTE_B4, 4, NOTE_AS4, 8, NOTE_A4, 4,
-  NOTE_G4, -8, NOTE_E5, -8, NOTE_G5, -8, NOTE_A5, 4, NOTE_F5, 8, NOTE_G5, 8,
-  REST, 8, NOTE_E5, 4, NOTE_C5, 8, NOTE_D5, 8, NOTE_B4, -4,
+                       NOTE_C5, -4, NOTE_G4, 8, REST, 4, NOTE_E4, -4, // repeats from 19
+                       NOTE_A4, 4, NOTE_B4, 4, NOTE_AS4, 8, NOTE_A4, 4,
+                       NOTE_G4, -8, NOTE_E5, -8, NOTE_G5, -8, NOTE_A5, 4, NOTE_F5, 8, NOTE_G5, 8,
+                       REST, 8, NOTE_E5, 4, NOTE_C5, 8, NOTE_D5, 8, NOTE_B4, -4,
 
-  NOTE_E5, 8, NOTE_C5, 4, NOTE_G4, 8, REST, 4, NOTE_GS4, 4, //23
-  NOTE_A4, 8, NOTE_F5, 4, NOTE_F5, 8, NOTE_A4, 2,
-  NOTE_D5, -8, NOTE_A5, -8, NOTE_A5, -8, NOTE_A5, -8, NOTE_G5, -8, NOTE_F5, -8,
+                       NOTE_E5, 8, NOTE_C5, 4, NOTE_G4, 8, REST, 4, NOTE_GS4, 4, //23
+                       NOTE_A4, 8, NOTE_F5, 4, NOTE_F5, 8, NOTE_A4, 2,
+                       NOTE_D5, -8, NOTE_A5, -8, NOTE_A5, -8, NOTE_A5, -8, NOTE_G5, -8, NOTE_F5, -8,
 
-  NOTE_E5, 8, NOTE_C5, 4, NOTE_A4, 8, NOTE_G4, 2, //26
-  NOTE_E5, 8, NOTE_C5, 4, NOTE_G4, 8, REST, 4, NOTE_GS4, 4,
-  NOTE_A4, 8, NOTE_F5, 4, NOTE_F5, 8, NOTE_A4, 2,
-  NOTE_B4, 8, NOTE_F5, 4, NOTE_F5, 8, NOTE_F5, -8, NOTE_E5, -8, NOTE_D5, -8,
-  NOTE_C5, 8, NOTE_E4, 4, NOTE_E4, 8, NOTE_C4, 2,
+                       NOTE_E5, 8, NOTE_C5, 4, NOTE_A4, 8, NOTE_G4, 2, //26
+                       NOTE_E5, 8, NOTE_C5, 4, NOTE_G4, 8, REST, 4, NOTE_GS4, 4,
+                       NOTE_A4, 8, NOTE_F5, 4, NOTE_F5, 8, NOTE_A4, 2,
+                       NOTE_B4, 8, NOTE_F5, 4, NOTE_F5, 8, NOTE_F5, -8, NOTE_E5, -8, NOTE_D5, -8,
+                       NOTE_C5, 8, NOTE_E4, 4, NOTE_E4, 8, NOTE_C4, 2,
 
-  NOTE_E5, 8, NOTE_C5, 4, NOTE_G4, 8, REST, 4, NOTE_GS4, 4, //repeats from 23
-  NOTE_A4, 8, NOTE_F5, 4, NOTE_F5, 8, NOTE_A4, 2,
-  NOTE_D5, -8, NOTE_A5, -8, NOTE_A5, -8, NOTE_A5, -8, NOTE_G5, -8, NOTE_F5, -8,
+                       NOTE_E5, 8, NOTE_C5, 4, NOTE_G4, 8, REST, 4, NOTE_GS4, 4, //repeats from 23
+                       NOTE_A4, 8, NOTE_F5, 4, NOTE_F5, 8, NOTE_A4, 2,
+                       NOTE_D5, -8, NOTE_A5, -8, NOTE_A5, -8, NOTE_A5, -8, NOTE_G5, -8, NOTE_F5, -8,
 
-  NOTE_E5, 8, NOTE_C5, 4, NOTE_A4, 8, NOTE_G4, 2, //26
-  NOTE_E5, 8, NOTE_C5, 4, NOTE_G4, 8, REST, 4, NOTE_GS4, 4,
-  NOTE_A4, 8, NOTE_F5, 4, NOTE_F5, 8, NOTE_A4, 2,
-  NOTE_B4, 8, NOTE_F5, 4, NOTE_F5, 8, NOTE_F5, -8, NOTE_E5, -8, NOTE_D5, -8,
-  NOTE_C5, 8, NOTE_E4, 4, NOTE_E4, 8, NOTE_C4, 2,
-  NOTE_C5, 8, NOTE_C5, 4, NOTE_C5, 8, REST, 8, NOTE_C5, 8, NOTE_D5, 8, NOTE_E5, 8,
-  REST, 1,
+                       NOTE_E5, 8, NOTE_C5, 4, NOTE_A4, 8, NOTE_G4, 2, //26
+                       NOTE_E5, 8, NOTE_C5, 4, NOTE_G4, 8, REST, 4, NOTE_GS4, 4,
+                       NOTE_A4, 8, NOTE_F5, 4, NOTE_F5, 8, NOTE_A4, 2,
+                       NOTE_B4, 8, NOTE_F5, 4, NOTE_F5, 8, NOTE_F5, -8, NOTE_E5, -8, NOTE_D5, -8,
+                       NOTE_C5, 8, NOTE_E4, 4, NOTE_E4, 8, NOTE_C4, 2,
+                       NOTE_C5, 8, NOTE_C5, 4, NOTE_C5, 8, REST, 8, NOTE_C5, 8, NOTE_D5, 8, NOTE_E5, 8,
+                       REST, 1,
 
-  NOTE_C5, 8, NOTE_C5, 4, NOTE_C5, 8, REST, 8, NOTE_C5, 8, NOTE_D5, 4, //33
-  NOTE_E5, 8, NOTE_C5, 4, NOTE_A4, 8, NOTE_G4, 2,
-  NOTE_E5, 8, NOTE_E5, 8, REST, 8, NOTE_E5, 8, REST, 8, NOTE_C5, 8, NOTE_E5, 4,
-  NOTE_G5, 4, REST, 4, NOTE_G4, 4, REST, 4,
-  NOTE_E5, 8, NOTE_C5, 4, NOTE_G4, 8, REST, 4, NOTE_GS4, 4,
-  NOTE_A4, 8, NOTE_F5, 4, NOTE_F5, 8, NOTE_A4, 2,
-  NOTE_D5, -8, NOTE_A5, -8, NOTE_A5, -8, NOTE_A5, -8, NOTE_G5, -8, NOTE_F5, -8,
+                       NOTE_C5, 8, NOTE_C5, 4, NOTE_C5, 8, REST, 8, NOTE_C5, 8, NOTE_D5, 4, //33
+                       NOTE_E5, 8, NOTE_C5, 4, NOTE_A4, 8, NOTE_G4, 2,
+                       NOTE_E5, 8, NOTE_E5, 8, REST, 8, NOTE_E5, 8, REST, 8, NOTE_C5, 8, NOTE_E5, 4,
+                       NOTE_G5, 4, REST, 4, NOTE_G4, 4, REST, 4,
+                       NOTE_E5, 8, NOTE_C5, 4, NOTE_G4, 8, REST, 4, NOTE_GS4, 4,
+                       NOTE_A4, 8, NOTE_F5, 4, NOTE_F5, 8, NOTE_A4, 2,
+                       NOTE_D5, -8, NOTE_A5, -8, NOTE_A5, -8, NOTE_A5, -8, NOTE_G5, -8, NOTE_F5, -8,
 
-  NOTE_E5, 8, NOTE_C5, 4, NOTE_A4, 8, NOTE_G4, 2, //40
-  NOTE_E5, 8, NOTE_C5, 4, NOTE_G4, 8, REST, 4, NOTE_GS4, 4,
-  NOTE_A4, 8, NOTE_F5, 4, NOTE_F5, 8, NOTE_A4, 2,
-  NOTE_B4, 8, NOTE_F5, 4, NOTE_F5, 8, NOTE_F5, -8, NOTE_E5, -8, NOTE_D5, -8,
-  NOTE_C5, 8, NOTE_E4, 4, NOTE_E4, 8, NOTE_C4, 2,
+                       NOTE_E5, 8, NOTE_C5, 4, NOTE_A4, 8, NOTE_G4, 2, //40
+                       NOTE_E5, 8, NOTE_C5, 4, NOTE_G4, 8, REST, 4, NOTE_GS4, 4,
+                       NOTE_A4, 8, NOTE_F5, 4, NOTE_F5, 8, NOTE_A4, 2,
+                       NOTE_B4, 8, NOTE_F5, 4, NOTE_F5, 8, NOTE_F5, -8, NOTE_E5, -8, NOTE_D5, -8,
+                       NOTE_C5, 8, NOTE_E4, 4, NOTE_E4, 8, NOTE_C4, 2,
 
-  //game over sound
-  NOTE_C5, -4, NOTE_G4, -4, NOTE_E4, 4, //45
-  NOTE_A4, -8, NOTE_B4, -8, NOTE_A4, -8, NOTE_GS4, -8, NOTE_AS4, -8, NOTE_GS4, -8,
-  NOTE_G4, 8, NOTE_D4, 8, NOTE_E4, -2,};
+                       //game over sound
+                       NOTE_C5, -4, NOTE_G4, -4, NOTE_E4, 4, //45
+                       NOTE_A4, -8, NOTE_B4, -8, NOTE_A4, -8, NOTE_GS4, -8, NOTE_AS4, -8, NOTE_GS4, -8,
+                       NOTE_G4, 8, NOTE_D4, 8, NOTE_E4, -2,
+                     };
 int melody_tetris[] = {NOTE_E5, 4,  NOTE_B4, 8,  NOTE_C5, 8,  NOTE_D5, 4,  NOTE_C5, 8,  NOTE_B4, 8,
-  NOTE_A4, 4,  NOTE_A4, 8,  NOTE_C5, 8,  NOTE_E5, 4,  NOTE_D5, 8,  NOTE_C5, 8,
-  NOTE_B4, -4,  NOTE_C5, 8,  NOTE_D5, 4,  NOTE_E5, 4,
-  NOTE_C5, 4,  NOTE_A4, 4,  NOTE_A4, 8,  NOTE_A4, 4,  NOTE_B4, 8,  NOTE_C5, 8,
+                       NOTE_A4, 4,  NOTE_A4, 8,  NOTE_C5, 8,  NOTE_E5, 4,  NOTE_D5, 8,  NOTE_C5, 8,
+                       NOTE_B4, -4,  NOTE_C5, 8,  NOTE_D5, 4,  NOTE_E5, 4,
+                       NOTE_C5, 4,  NOTE_A4, 4,  NOTE_A4, 8,  NOTE_A4, 4,  NOTE_B4, 8,  NOTE_C5, 8,
 
-  NOTE_D5, -4,  NOTE_F5, 8,  NOTE_A5, 4,  NOTE_G5, 8,  NOTE_F5, 8,
-  NOTE_E5, -4,  NOTE_C5, 8,  NOTE_E5, 4,  NOTE_D5, 8,  NOTE_C5, 8,
-  NOTE_B4, 4,  NOTE_B4, 8,  NOTE_C5, 8,  NOTE_D5, 4,  NOTE_E5, 4,
-  NOTE_C5, 4,  NOTE_A4, 4,  NOTE_A4, 4, REST, 4,
+                       NOTE_D5, -4,  NOTE_F5, 8,  NOTE_A5, 4,  NOTE_G5, 8,  NOTE_F5, 8,
+                       NOTE_E5, -4,  NOTE_C5, 8,  NOTE_E5, 4,  NOTE_D5, 8,  NOTE_C5, 8,
+                       NOTE_B4, 4,  NOTE_B4, 8,  NOTE_C5, 8,  NOTE_D5, 4,  NOTE_E5, 4,
+                       NOTE_C5, 4,  NOTE_A4, 4,  NOTE_A4, 4, REST, 4,
 
-  NOTE_E5, 4,  NOTE_B4, 8,  NOTE_C5, 8,  NOTE_D5, 4,  NOTE_C5, 8,  NOTE_B4, 8,
-  NOTE_A4, 4,  NOTE_A4, 8,  NOTE_C5, 8,  NOTE_E5, 4,  NOTE_D5, 8,  NOTE_C5, 8,
-  NOTE_B4, -4,  NOTE_C5, 8,  NOTE_D5, 4,  NOTE_E5, 4,
-  NOTE_C5, 4,  NOTE_A4, 4,  NOTE_A4, 8,  NOTE_A4, 4,  NOTE_B4, 8,  NOTE_C5, 8,
+                       NOTE_E5, 4,  NOTE_B4, 8,  NOTE_C5, 8,  NOTE_D5, 4,  NOTE_C5, 8,  NOTE_B4, 8,
+                       NOTE_A4, 4,  NOTE_A4, 8,  NOTE_C5, 8,  NOTE_E5, 4,  NOTE_D5, 8,  NOTE_C5, 8,
+                       NOTE_B4, -4,  NOTE_C5, 8,  NOTE_D5, 4,  NOTE_E5, 4,
+                       NOTE_C5, 4,  NOTE_A4, 4,  NOTE_A4, 8,  NOTE_A4, 4,  NOTE_B4, 8,  NOTE_C5, 8,
 
-  NOTE_D5, -4,  NOTE_F5, 8,  NOTE_A5, 4,  NOTE_G5, 8,  NOTE_F5, 8,
-  NOTE_E5, -4,  NOTE_C5, 8,  NOTE_E5, 4,  NOTE_D5, 8,  NOTE_C5, 8,
-  NOTE_B4, 4,  NOTE_B4, 8,  NOTE_C5, 8,  NOTE_D5, 4,  NOTE_E5, 4,
-  NOTE_C5, 4,  NOTE_A4, 4,  NOTE_A4, 4, REST, 4,
+                       NOTE_D5, -4,  NOTE_F5, 8,  NOTE_A5, 4,  NOTE_G5, 8,  NOTE_F5, 8,
+                       NOTE_E5, -4,  NOTE_C5, 8,  NOTE_E5, 4,  NOTE_D5, 8,  NOTE_C5, 8,
+                       NOTE_B4, 4,  NOTE_B4, 8,  NOTE_C5, 8,  NOTE_D5, 4,  NOTE_E5, 4,
+                       NOTE_C5, 4,  NOTE_A4, 4,  NOTE_A4, 4, REST, 4,
 
 
-  NOTE_E5, 2,  NOTE_C5, 2,
-  NOTE_D5, 2,   NOTE_B4, 2,
-  NOTE_C5, 2,   NOTE_A4, 2,
-  NOTE_GS4, 2,  NOTE_B4, 4,  REST, 8,
-  NOTE_E5, 2,   NOTE_C5, 2,
-  NOTE_D5, 2,   NOTE_B4, 2,
-  NOTE_C5, 4,   NOTE_E5, 4,  NOTE_A5, 2,
-  NOTE_GS5, 2,};
-int melody_never_gonna_give_you_up[] = {NOTE_D5,-4, NOTE_E5,-4, NOTE_A4,4, //1
-  NOTE_E5,-4, NOTE_FS5,-4, NOTE_A5,16, NOTE_G5,16, NOTE_FS5,8,
-  NOTE_D5,-4, NOTE_E5,-4, NOTE_A4,2,
-  NOTE_A4,16, NOTE_A4,16, NOTE_B4,16, NOTE_D5,8, NOTE_D5,16,
-  NOTE_D5,-4, NOTE_E5,-4, NOTE_A4,4, //repeat from 1
-  NOTE_E5,-4, NOTE_FS5,-4, NOTE_A5,16, NOTE_G5,16, NOTE_FS5,8,
-  NOTE_D5,-4, NOTE_E5,-4, NOTE_A4,2,
-  NOTE_A4,16, NOTE_A4,16, NOTE_B4,16, NOTE_D5,8, NOTE_D5,16,
-  REST,4, NOTE_B4,8, NOTE_CS5,8, NOTE_D5,8, NOTE_D5,8, NOTE_E5,8, NOTE_CS5,-8,
-  NOTE_B4,16, NOTE_A4,2, REST,4, 
+                       NOTE_E5, 2,  NOTE_C5, 2,
+                       NOTE_D5, 2,   NOTE_B4, 2,
+                       NOTE_C5, 2,   NOTE_A4, 2,
+                       NOTE_GS4, 2,  NOTE_B4, 4,  REST, 8,
+                       NOTE_E5, 2,   NOTE_C5, 2,
+                       NOTE_D5, 2,   NOTE_B4, 2,
+                       NOTE_C5, 4,   NOTE_E5, 4,  NOTE_A5, 2,
+                       NOTE_GS5, 2,
+                      };
+int melody_never_gonna_give_you_up[] = {NOTE_D5, -4, NOTE_E5, -4, NOTE_A4, 4, //1
+                                        NOTE_E5, -4, NOTE_FS5, -4, NOTE_A5, 16, NOTE_G5, 16, NOTE_FS5, 8,
+                                        NOTE_D5, -4, NOTE_E5, -4, NOTE_A4, 2,
+                                        NOTE_A4, 16, NOTE_A4, 16, NOTE_B4, 16, NOTE_D5, 8, NOTE_D5, 16,
+                                        NOTE_D5, -4, NOTE_E5, -4, NOTE_A4, 4, //repeat from 1
+                                        NOTE_E5, -4, NOTE_FS5, -4, NOTE_A5, 16, NOTE_G5, 16, NOTE_FS5, 8,
+                                        NOTE_D5, -4, NOTE_E5, -4, NOTE_A4, 2,
+                                        NOTE_A4, 16, NOTE_A4, 16, NOTE_B4, 16, NOTE_D5, 8, NOTE_D5, 16,
+                                        REST, 4, NOTE_B4, 8, NOTE_CS5, 8, NOTE_D5, 8, NOTE_D5, 8, NOTE_E5, 8, NOTE_CS5, -8,
+                                        NOTE_B4, 16, NOTE_A4, 2, REST, 4,
 
-  REST,8, NOTE_B4,8, NOTE_B4,8, NOTE_CS5,8, NOTE_D5,8, NOTE_B4,4, NOTE_A4,8, //7
-  NOTE_A5,8, REST,8, NOTE_A5,8, NOTE_E5,-4, REST,4, 
-  NOTE_B4,8, NOTE_B4,8, NOTE_CS5,8, NOTE_D5,8, NOTE_B4,8, NOTE_D5,8, NOTE_E5,8, REST,8,
-  REST,8, NOTE_CS5,8, NOTE_B4,8, NOTE_A4,-4, REST,4,
-  REST,8, NOTE_B4,8, NOTE_B4,8, NOTE_CS5,8, NOTE_D5,8, NOTE_B4,8, NOTE_A4,4,
-  NOTE_E5,8, NOTE_E5,8, NOTE_E5,8, NOTE_FS5,8, NOTE_E5,4, REST,4,
-   
-  NOTE_D5,2, NOTE_E5,8, NOTE_FS5,8, NOTE_D5,8, //13
-  NOTE_E5,8, NOTE_E5,8, NOTE_E5,8, NOTE_FS5,8, NOTE_E5,4, NOTE_A4,4,
-  REST,2, NOTE_B4,8, NOTE_CS5,8, NOTE_D5,8, NOTE_B4,8,
-  REST,8, NOTE_E5,8, NOTE_FS5,8, NOTE_E5,-4, NOTE_A4,16, NOTE_B4,16, NOTE_D5,16, NOTE_B4,16,
-  NOTE_FS5,-8, NOTE_FS5,-8, NOTE_E5,-4, NOTE_A4,16, NOTE_B4,16, NOTE_D5,16, NOTE_B4,16,
+                                        REST, 8, NOTE_B4, 8, NOTE_B4, 8, NOTE_CS5, 8, NOTE_D5, 8, NOTE_B4, 4, NOTE_A4, 8, //7
+                                        NOTE_A5, 8, REST, 8, NOTE_A5, 8, NOTE_E5, -4, REST, 4,
+                                        NOTE_B4, 8, NOTE_B4, 8, NOTE_CS5, 8, NOTE_D5, 8, NOTE_B4, 8, NOTE_D5, 8, NOTE_E5, 8, REST, 8,
+                                        REST, 8, NOTE_CS5, 8, NOTE_B4, 8, NOTE_A4, -4, REST, 4,
+                                        REST, 8, NOTE_B4, 8, NOTE_B4, 8, NOTE_CS5, 8, NOTE_D5, 8, NOTE_B4, 8, NOTE_A4, 4,
+                                        NOTE_E5, 8, NOTE_E5, 8, NOTE_E5, 8, NOTE_FS5, 8, NOTE_E5, 4, REST, 4,
 
-  NOTE_E5,-8, NOTE_E5,-8, NOTE_D5,-8, NOTE_CS5,16, NOTE_B4,-8, NOTE_A4,16, NOTE_B4,16, NOTE_D5,16, NOTE_B4,16, //18
-  NOTE_D5,4, NOTE_E5,8, NOTE_CS5,-8, NOTE_B4,16, NOTE_A4,8, NOTE_A4,8, NOTE_A4,8, 
-  NOTE_E5,4, NOTE_D5,2, NOTE_A4,16, NOTE_B4,16, NOTE_D5,16, NOTE_B4,16,
-  NOTE_FS5,-8, NOTE_FS5,-8, NOTE_E5,-4, NOTE_A4,16, NOTE_B4,16, NOTE_D5,16, NOTE_B4,16,
-  NOTE_A5,4, NOTE_CS5,8, NOTE_D5,-8, NOTE_CS5,16, NOTE_B4,8, NOTE_A4,16, NOTE_B4,16, NOTE_D5,16, NOTE_B4,16,
+                                        NOTE_D5, 2, NOTE_E5, 8, NOTE_FS5, 8, NOTE_D5, 8, //13
+                                        NOTE_E5, 8, NOTE_E5, 8, NOTE_E5, 8, NOTE_FS5, 8, NOTE_E5, 4, NOTE_A4, 4,
+                                        REST, 2, NOTE_B4, 8, NOTE_CS5, 8, NOTE_D5, 8, NOTE_B4, 8,
+                                        REST, 8, NOTE_E5, 8, NOTE_FS5, 8, NOTE_E5, -4, NOTE_A4, 16, NOTE_B4, 16, NOTE_D5, 16, NOTE_B4, 16,
+                                        NOTE_FS5, -8, NOTE_FS5, -8, NOTE_E5, -4, NOTE_A4, 16, NOTE_B4, 16, NOTE_D5, 16, NOTE_B4, 16,
 
-  NOTE_D5,4, NOTE_E5,8, NOTE_CS5,-8, NOTE_B4,16, NOTE_A4,4, NOTE_A4,8,  //23
-  NOTE_E5,4, NOTE_D5,2, REST,4,
-  REST,8, NOTE_B4,8, NOTE_D5,8, NOTE_B4,8, NOTE_D5,8, NOTE_E5,4, REST,8,
-  REST,8, NOTE_CS5,8, NOTE_B4,8, NOTE_A4,-4, REST,4,
-  REST,8, NOTE_B4,8, NOTE_B4,8, NOTE_CS5,8, NOTE_D5,8, NOTE_B4,8, NOTE_A4,4,
-  REST,8, NOTE_A5,8, NOTE_A5,8, NOTE_E5,8, NOTE_FS5,8, NOTE_E5,8, NOTE_D5,8,
-  
-  REST,8, NOTE_A4,8, NOTE_B4,8, NOTE_CS5,8, NOTE_D5,8, NOTE_B4,8, //29
-  REST,8, NOTE_CS5,8, NOTE_B4,8, NOTE_A4,-4, REST,4,
-  NOTE_B4,8, NOTE_B4,8, NOTE_CS5,8, NOTE_D5,8, NOTE_B4,8, NOTE_A4,4, REST,8,
-  REST,8, NOTE_E5,8, NOTE_E5,8, NOTE_FS5,4, NOTE_E5,-4, 
-  NOTE_D5,2, NOTE_D5,8, NOTE_E5,8, NOTE_FS5,8, NOTE_E5,4, 
-  NOTE_E5,8, NOTE_E5,8, NOTE_FS5,8, NOTE_E5,8, NOTE_A4,8, NOTE_A4,4,
+                                        NOTE_E5, -8, NOTE_E5, -8, NOTE_D5, -8, NOTE_CS5, 16, NOTE_B4, -8, NOTE_A4, 16, NOTE_B4, 16, NOTE_D5, 16, NOTE_B4, 16, //18
+                                        NOTE_D5, 4, NOTE_E5, 8, NOTE_CS5, -8, NOTE_B4, 16, NOTE_A4, 8, NOTE_A4, 8, NOTE_A4, 8,
+                                        NOTE_E5, 4, NOTE_D5, 2, NOTE_A4, 16, NOTE_B4, 16, NOTE_D5, 16, NOTE_B4, 16,
+                                        NOTE_FS5, -8, NOTE_FS5, -8, NOTE_E5, -4, NOTE_A4, 16, NOTE_B4, 16, NOTE_D5, 16, NOTE_B4, 16,
+                                        NOTE_A5, 4, NOTE_CS5, 8, NOTE_D5, -8, NOTE_CS5, 16, NOTE_B4, 8, NOTE_A4, 16, NOTE_B4, 16, NOTE_D5, 16, NOTE_B4, 16,
 
-  REST,-4, NOTE_A4,8, NOTE_B4,8, NOTE_CS5,8, NOTE_D5,8, NOTE_B4,8, //35
-  REST,8, NOTE_E5,8, NOTE_FS5,8, NOTE_E5,-4, NOTE_A4,16, NOTE_B4,16, NOTE_D5,16, NOTE_B4,16,
-  NOTE_FS5,-8, NOTE_FS5,-8, NOTE_E5,-4, NOTE_A4,16, NOTE_B4,16, NOTE_D5,16, NOTE_B4,16,
-  NOTE_E5,-8, NOTE_E5,-8, NOTE_D5,-8, NOTE_CS5,16, NOTE_B4,8, NOTE_A4,16, NOTE_B4,16, NOTE_D5,16, NOTE_B4,16,
-  NOTE_D5,4, NOTE_E5,8, NOTE_CS5,-8, NOTE_B4,16, NOTE_A4,4, NOTE_A4,8, 
+                                        NOTE_D5, 4, NOTE_E5, 8, NOTE_CS5, -8, NOTE_B4, 16, NOTE_A4, 4, NOTE_A4, 8, //23
+                                        NOTE_E5, 4, NOTE_D5, 2, REST, 4,
+                                        REST, 8, NOTE_B4, 8, NOTE_D5, 8, NOTE_B4, 8, NOTE_D5, 8, NOTE_E5, 4, REST, 8,
+                                        REST, 8, NOTE_CS5, 8, NOTE_B4, 8, NOTE_A4, -4, REST, 4,
+                                        REST, 8, NOTE_B4, 8, NOTE_B4, 8, NOTE_CS5, 8, NOTE_D5, 8, NOTE_B4, 8, NOTE_A4, 4,
+                                        REST, 8, NOTE_A5, 8, NOTE_A5, 8, NOTE_E5, 8, NOTE_FS5, 8, NOTE_E5, 8, NOTE_D5, 8,
 
-   NOTE_E5,4, NOTE_D5,2, NOTE_A4,16, NOTE_B4,16, NOTE_D5,16, NOTE_B4,16, //40
-  NOTE_FS5,-8, NOTE_FS5,-8, NOTE_E5,-4, NOTE_A4,16, NOTE_B4,16, NOTE_D5,16, NOTE_B4,16,
-  NOTE_A5,4, NOTE_CS5,8, NOTE_D5,-8, NOTE_CS5,16, NOTE_B4,8, NOTE_A4,16, NOTE_B4,16, NOTE_D5,16, NOTE_B4,16,
-  NOTE_D5,4, NOTE_E5,8, NOTE_CS5,-8, NOTE_B4,16, NOTE_A4,4, NOTE_A4,8,  
-  NOTE_E5,4, NOTE_D5,2, NOTE_A4,16, NOTE_B4,16, NOTE_D5,16, NOTE_B4,16,
-   
-  NOTE_FS5,-8, NOTE_FS5,-8, NOTE_E5,-4, NOTE_A4,16, NOTE_B4,16, NOTE_D5,16, NOTE_B4,16, //45
-  NOTE_A5,4, NOTE_CS5,8, NOTE_D5,-8, NOTE_CS5,16, NOTE_B4,8, NOTE_A4,16, NOTE_B4,16, NOTE_D5,16, NOTE_B4,16,
-  NOTE_D5,4, NOTE_E5,8, NOTE_CS5,-8, NOTE_B4,16, NOTE_A4,4, NOTE_A4,8,  
-  NOTE_E5,4, NOTE_D5,2, NOTE_A4,16, NOTE_B4,16, NOTE_D5,16, NOTE_B4,16,
-  NOTE_FS5,-8, NOTE_FS5,-8, NOTE_E5,-4, NOTE_A4,16, NOTE_B4,16, NOTE_D5,16, NOTE_B4,16, //45
-  
-  NOTE_A5,4, NOTE_CS5,8, NOTE_D5,-8, NOTE_CS5,16, NOTE_B4,8, NOTE_A4,16, NOTE_B4,16, NOTE_D5,16, NOTE_B4,16,
-  NOTE_D5,4, NOTE_E5,8, NOTE_CS5,-8, NOTE_B4,16, NOTE_A4,4, NOTE_A4,8, 
+                                        REST, 8, NOTE_A4, 8, NOTE_B4, 8, NOTE_CS5, 8, NOTE_D5, 8, NOTE_B4, 8, //29
+                                        REST, 8, NOTE_CS5, 8, NOTE_B4, 8, NOTE_A4, -4, REST, 4,
+                                        NOTE_B4, 8, NOTE_B4, 8, NOTE_CS5, 8, NOTE_D5, 8, NOTE_B4, 8, NOTE_A4, 4, REST, 8,
+                                        REST, 8, NOTE_E5, 8, NOTE_E5, 8, NOTE_FS5, 4, NOTE_E5, -4,
+                                        NOTE_D5, 2, NOTE_D5, 8, NOTE_E5, 8, NOTE_FS5, 8, NOTE_E5, 4,
+                                        NOTE_E5, 8, NOTE_E5, 8, NOTE_FS5, 8, NOTE_E5, 8, NOTE_A4, 8, NOTE_A4, 4,
 
-  NOTE_E5,4, NOTE_D5,2, REST,4};
+                                        REST, -4, NOTE_A4, 8, NOTE_B4, 8, NOTE_CS5, 8, NOTE_D5, 8, NOTE_B4, 8, //35
+                                        REST, 8, NOTE_E5, 8, NOTE_FS5, 8, NOTE_E5, -4, NOTE_A4, 16, NOTE_B4, 16, NOTE_D5, 16, NOTE_B4, 16,
+                                        NOTE_FS5, -8, NOTE_FS5, -8, NOTE_E5, -4, NOTE_A4, 16, NOTE_B4, 16, NOTE_D5, 16, NOTE_B4, 16,
+                                        NOTE_E5, -8, NOTE_E5, -8, NOTE_D5, -8, NOTE_CS5, 16, NOTE_B4, 8, NOTE_A4, 16, NOTE_B4, 16, NOTE_D5, 16, NOTE_B4, 16,
+                                        NOTE_D5, 4, NOTE_E5, 8, NOTE_CS5, -8, NOTE_B4, 16, NOTE_A4, 4, NOTE_A4, 8,
+
+                                        NOTE_E5, 4, NOTE_D5, 2, NOTE_A4, 16, NOTE_B4, 16, NOTE_D5, 16, NOTE_B4, 16, //40
+                                        NOTE_FS5, -8, NOTE_FS5, -8, NOTE_E5, -4, NOTE_A4, 16, NOTE_B4, 16, NOTE_D5, 16, NOTE_B4, 16,
+                                        NOTE_A5, 4, NOTE_CS5, 8, NOTE_D5, -8, NOTE_CS5, 16, NOTE_B4, 8, NOTE_A4, 16, NOTE_B4, 16, NOTE_D5, 16, NOTE_B4, 16,
+                                        NOTE_D5, 4, NOTE_E5, 8, NOTE_CS5, -8, NOTE_B4, 16, NOTE_A4, 4, NOTE_A4, 8,
+                                        NOTE_E5, 4, NOTE_D5, 2, NOTE_A4, 16, NOTE_B4, 16, NOTE_D5, 16, NOTE_B4, 16,
+
+                                        NOTE_FS5, -8, NOTE_FS5, -8, NOTE_E5, -4, NOTE_A4, 16, NOTE_B4, 16, NOTE_D5, 16, NOTE_B4, 16, //45
+                                        NOTE_A5, 4, NOTE_CS5, 8, NOTE_D5, -8, NOTE_CS5, 16, NOTE_B4, 8, NOTE_A4, 16, NOTE_B4, 16, NOTE_D5, 16, NOTE_B4, 16,
+                                        NOTE_D5, 4, NOTE_E5, 8, NOTE_CS5, -8, NOTE_B4, 16, NOTE_A4, 4, NOTE_A4, 8,
+                                        NOTE_E5, 4, NOTE_D5, 2, NOTE_A4, 16, NOTE_B4, 16, NOTE_D5, 16, NOTE_B4, 16,
+                                        NOTE_FS5, -8, NOTE_FS5, -8, NOTE_E5, -4, NOTE_A4, 16, NOTE_B4, 16, NOTE_D5, 16, NOTE_B4, 16, //45
+
+                                        NOTE_A5, 4, NOTE_CS5, 8, NOTE_D5, -8, NOTE_CS5, 16, NOTE_B4, 8, NOTE_A4, 16, NOTE_B4, 16, NOTE_D5, 16, NOTE_B4, 16,
+                                        NOTE_D5, 4, NOTE_E5, 8, NOTE_CS5, -8, NOTE_B4, 16, NOTE_A4, 4, NOTE_A4, 8,
+
+                                        NOTE_E5, 4, NOTE_D5, 2, REST, 4
+                                       };
 
 
 
@@ -460,35 +467,40 @@ void playMelody(int melody[], int notes, int wholenote) {
 void setup() {
   Serial.begin(9600);
   // Initialize the TFT
-  int16_t receibed=TFT.read16();
+  int16_t receibed = TFT.read16();
   TFT.initR(receibed);
   TFT.setRotation(3);
   TFT.fillScreen(ST7735_BLACK);
- 
-// Connect to WiFi
+
+  // Connect to WiFi
   Serial.println("Attempting to connect to WPA network...");
-  WiFi.softAPConfig (local_IP, gateway, subnet);
-  bool status = WiFi.softAP(ssid, password);
-  if ( status != true) {
-    Serial.println("Couldn't get a wifi connection");
-    while(true);
-  }
-  else {
-    server.begin();
-    Serial.print("Connected to wifi. My address:");
-    IPAddress myAddress = WiFi.localIP();
-    Serial.println(myAddress);
+  //WiFi.softAPConfig (local_IP, gateway, subnet);
+  //bool status = WiFi.softAP(ssid, password);
+
+  WiFi.begin("Bea Lima", "123456789");
+
+  while (WiFi.status() != WL_CONNECTED) {
+    Serial.println("Connecting");
+    delay(1000);
   }
 
+
+  server.begin();
+  Serial.print("Connected to wifi. My address:");
+  IPAddress myAddress = WiFi.localIP();
+  Serial.println(myAddress);
+
+
   // Initialize NeoPixel and set the brightness
-  strip.begin();
-  strip.setBrightness(1);
-  strip.clear();
-  strip.show();
+  strip.Begin();
+
+ //strip.setBrightness(1);
+  strip.ClearTo(RgbColor(0, 0, 0));
+  strip.Show();
 
 
   xTaskCreatePinnedToCore(neoPixelMODO, "NeoPixel", 1000, NULL, 1, &neoPixelMode, tskNO_AFFINITY);
-  xTaskCreatePinnedToCore(piezzoMODO, "Piezzo", 1000, NULL, 1, &piezzoMode, tskNO_AFFINITY);
+  //xTaskCreatePinnedToCore(piezzoMODO, "Piezzo", 1000, NULL, 1, &piezzoMode, tskNO_AFFINITY);
   //vTaskSuspend(); para suspender a task
 }
 
@@ -498,58 +510,80 @@ void setup() {
 //====================================================================================================================================================================================
 //====================================================================================================================================================================================
 
-String lastState;// = "PRONTO"
+String lastState = "ESPERA";
 
 void piezzoMODO(void*) {
-  while(true){
-  if(lastState == "PREPARAR"){
-  // play We Wish You a Merry Christmas melody
-  playMelody(melody_christmas, notes_christmas, wholenote_christmas);
-  delay(1000);
+  while (true) {
+    if (lastState == "PREPARAR") {
+      // play We Wish You a Merry Christmas melody
+      playMelody(melody_christmas, notes_christmas, wholenote_christmas);
+      delay(1000);
 
-  // play Game of Thrones melody
-  playMelody(melody_game_of_thrones, notes_game_of_thrones, wholenote_game_of_thrones);
-  // wait for 3 seconds
-  delay(1000);
+      // play Game of Thrones melody
+      playMelody(melody_game_of_thrones, notes_game_of_thrones, wholenote_game_of_thrones);
+      // wait for 3 seconds
+      delay(1000);
 
-  // play Mario
-  playMelody(melody_mario, notes_mario, wholenote_mario);
-  delay(1000);
+      // play Mario
+      playMelody(melody_mario, notes_mario, wholenote_mario);
+      delay(1000);
 
-  // play Tetris
-  playMelody(melody_tetris, notes_tetris, wholenote_tetris);
-  delay(1000);
+      // play Tetris
+      playMelody(melody_tetris, notes_tetris, wholenote_tetris);
+      delay(1000);
 
-  // play Never gonna give you up
-  playMelody(melody_never_gonna_give_you_up, notes_never_gonna_give_you_up, wholenote_never_gonna_give_you_up);
-  delay(1000);
+      // play Never gonna give you up
+      playMelody(melody_never_gonna_give_you_up, notes_never_gonna_give_you_up, wholenote_never_gonna_give_you_up);
+      delay(1000);
 
-  }else if(lastState == "PRONTO"){
-    tone(piezzoPin,261);
-    delay(10);}
+    } else if (lastState == "PRONTO") {
+      tone(piezzoPin, 261);
+      delay(900);
+    }
   }
 }
 
 void neoPixelMODO(void*) {
-  while(true){
-  if(lastState == "PREPARAR"){
-  strip.clear();
-  strip.show();
+  while (true) {
+    if (lastState == "ESPERA") {
+      
+      strip.ClearTo(RgbColor(0, 0, 0));
+      strip.Show();
+      delay(100);
+      
+    } else if (lastState == "ACEITE") {
+      strip.ClearTo(RgbColor(0, 0, 0));
+      strip.Show();
 
-  for (int pixel = 0; pixel < numNeopixel; pixel++) {           
-    strip.setPixelColor(pixel, strip.Color(255, 255, 0));  
-    strip.show();                                           
-    delay(500);
-  }
-  strip.show();
+      for (int pixel = 0; pixel < numNeopixel; pixel++) {
+        if(lastState != "ACEITE")
+          break;
+        
+        strip.SetPixelColor(pixel, RgbColor(60, 0, 0));
+        strip.Show();
+        delay(500);
+      }
+      
+    } else if (lastState == "PREPARAR") {
+      strip.ClearTo(RgbColor(0, 0, 0));
+      strip.Show();
 
-  }else if(lastState == "PRONTO"){
+      for (int pixel = 0; pixel < numNeopixel; pixel++) {
+        if(lastState != "PREPARAR")
+          break;
+        
+        strip.SetPixelColor(pixel, RgbColor(60, 60, 0));
+        strip.Show();
+        delay(500);
+      }
 
-  for (int pixel = 0; pixel < numNeopixel; pixel++) {           
-    strip.setPixelColor(pixel, strip.Color(0, 255, 0));
-  }
-  strip.show();  // update to the NeoPixel Led Strip
-  }
+    } else if (lastState == "PRONTO") {
+
+      for (int pixel = 0; pixel < numNeopixel; pixel++) {
+        strip.SetPixelColor(pixel, RgbColor(0, 60, 0));
+      }
+      strip.Show();  // update to the NeoPixel Led Strip
+    }
   }
 }
 
@@ -560,17 +594,14 @@ void neoPixelMODO(void*) {
 //====================================================================================================================================================================================
 
 void executeESPERA() {  //TFT: "A esperar";NEOPIXEIS: Desligado;PIEZO: Desligado
-  vTaskSuspend(neoPixelMode);            // To end the last tasks
-  vTaskSuspend(piezzoMode);
-
+  //vTaskSuspend(neoPixelMode);            // To end the last tasks
+  //vTaskSuspend(piezzoMode);
+  //TFT.fillScreen(ST7735_BLACK);
   TFT.fillScreen(ST7735_BLACK);
   TFT.setTextColor(ST7735_WHITE);
   TFT.setTextSize(2);
   TFT.setCursor(0, 54);
   TFT.print("A esperar...");  //FOR THE TFT
-
-  strip.clear();
-  strip.show();
 
   Serial.println("[EXECUTING] ESPERA");
 }
@@ -582,42 +613,33 @@ void executeACEITE() {  //TFT: "Aceite";NEOPIXEIS: Loading com leds vermelhos;PI
   TFT.setCursor(0, 54);
   TFT.print("Pedido aceite");  //FOR THE TFT
 
-  strip.clear();
-  strip.show();
-
-  for (int pixel = 0; pixel < numNeopixel; pixel++) {           
-    strip.setPixelColor(pixel, strip.Color(255, 0, 0));  
-    strip.show();                                           
-    delay(500);
-  }
-  strip.show();
   Serial.println("[EXECUTING] ACEITE");
 }
 
 void executePREPARAR() {  //TFT: "A preparar";NEOPIXEIS: Loading com leds amarelos;PIEZO:Toca música para entreter o cliente
-
+  TFT.fillScreen(ST7735_BLACK);
   TFT.setTextColor(ST7735_WHITE);
   TFT.setTextSize(2);
   TFT.setCursor(0, 54);
 
   TFT.print("A preparar...");
 
-  vTaskResume(neoPixelMode);
-  vTaskResume(piezzoMode);
+  //vTaskResume(neoPixelMode);
+  //vTaskResume(piezzoMode);
 }
 
 void executePRONTO() {  //TFT: "Pronto";NEOPIXEIS: Acendem todos verdes;PIEZO: Toque intermitente
-  vTaskSuspend(neoPixelMode);            // To end the last tasks
-  vTaskSuspend(piezzoMode);         // To end the last tasks
+  //vTaskSuspend(neoPixelMode);            // To end the last tasks
+  //vTaskSuspend(piezzoMode);         // To end the last tasks
   
-  //TFT.fillScreen(ST7735_BLACK);
+  TFT.fillScreen(ST7735_BLACK);
   TFT.setTextColor(ST7735_WHITE);
   TFT.setTextSize(2);
   TFT.setCursor(0, 54);
   TFT.print("Pronto!");
 
-  vTaskResume(neoPixelMode);
-  vTaskResume(piezzoMode);
+  //vTaskResume(neoPixelMode);
+  //vTaskResume(piezzoMode);
 
 }
 //====================================================================================================================================================================================
@@ -627,39 +649,45 @@ void executePRONTO() {  //TFT: "Pronto";NEOPIXEIS: Acendem todos verdes;PIEZO: T
 //====================================================================================================================================================================================
 
 void loop() {
-  String currentState;  
+  String currentState;
   // listen for incoming clients
+  Serial.println(lastState);
   WiFiClient client = server.available();
   if (client) {
+    //Serial.println("client connecting");
 
     if (client.connected()) {
-        for (int i = 0; i < 255; i++) {
-          char c = client.read();
-          if (!('A' <= c && c <= 'Z')) { break; } // If there isn't a byte available, function returns -1.
+      //Serial.println("client connected");
 
-          currentState += String(c);
+      for (int i = 0; i < 255; i++) {
+        char c = client.read();
+        if (!('A' <= c && c <= 'Z')) {
+          break;  // If there isn't a byte available, function returns -1.
         }
+
+        currentState += String(c);
+      }
     }
     client.write(currentState.c_str());
     client.stop();
-    if(currentState != lastState){
+    if (currentState != lastState && currentState.length() > 2) {
       lastState = currentState;
     }
   }
 
-    if (lastState.indexOf("ESPERA") >= 0) {
-      Serial.println("Executing [ESPERA] state");
-      executeESPERA();
-    } else if (lastState.indexOf("ACEITE") >= 0) {
-      Serial.println("Executing [ACEITE] state");
-      executeACEITE();
-    } else if (lastState.indexOf("PREPARAR") >= 0) {
-      Serial.println("Executing [PREPARAR] state");
-      executePREPARAR();
-    } else if (lastState.indexOf("PRONTO") >= 0) {
-      Serial.println("Executing [PRONTO] state");
-      executePRONTO();
-    } else {
-      Serial.println("Unknown state!");
-    }
+  if (lastState.indexOf("ESPERA") >= 0) {
+    Serial.println("Executing [ESPERA] state");
+    executeESPERA();
+  } else if (lastState.indexOf("ACEITE") >= 0) {
+    Serial.println("Executing [ACEITE] state");
+    executeACEITE();
+  } else if (lastState.indexOf("PREPARAR") >= 0) {
+    Serial.println("Executing [PREPARAR] state");
+    executePREPARAR();
+  } else if (lastState.indexOf("PRONTO") >= 0) {
+    Serial.println("Executing [PRONTO] state");
+    executePRONTO();
+  } else {
+    //Serial.println("Unknown state!");
+  }
 }
