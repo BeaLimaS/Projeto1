@@ -1,57 +1,5 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
-/*
-const char* ssid = "Cozinha";
-const char* password =  "123456789";
-String serverName = "http://198.168.1.100";
-
-unsigned long lastTime = 0;
-unsigned long timerDelay = 5000;
-
- 
-void setup() {
-  Serial.begin(9600);
- 
-  WiFi.begin(ssid, password);
-   
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.println("Connecting to WiFi...");
-  }
-  Serial.print("Connected to WiFi network with IP Address: ");
-  Serial.println(WiFi.localIP());
-
-}
- 
-void loop() { 
-  if ((millis() - lastTime) > timerDelay) {
-    //Check WiFi connection status
-    if(WiFi.status()== WL_CONNECTED){
-      HTTPClient http;
-
-      String serverPath = serverName + "/state?a=1";
-      
-      http.begin(serverPath.c_str());
-      int httpResponseCode = http.GET();
-      
-      if (httpResponseCode>0) {
-        Serial.print("HTTP Response code: ");
-        Serial.println(httpResponseCode);
-        String payload = http.getString();
-        Serial.println(payload);
-      }
-      else {
-        Serial.print("Error code: ");
-        Serial.println(httpResponseCode);
-      }
-      http.end();
-  }
-    else {
-      Serial.println("WiFi Disconnected");
-    }
-    lastTime = millis();
-  }
-}*/
 
 #define buttonPin 27
 
