@@ -20,7 +20,7 @@ WiFiServer server(80);
 TaskHandle_t neoPixelMode;
 TaskHandle_t piezzoMode;
 
-
+String lastState = "ESPERA";
 
 //pin declaration for the TFT
 #define cs    5    // Chip select line for TFT display
@@ -450,6 +450,11 @@ unsigned int notes_never_gonna_give_you_up = sizeof(melody_never_gonna_give_you_
 void playMelody(int melody[], int notes, int wholenote) {
   // iterate over the notes of the melody
   for (int thisNote = 0; thisNote < notes * 2; thisNote = thisNote + 2) {
+    if (lastState != "PREPARAR") {
+      noTone(piezzoPin);
+      break;
+    }
+
     int divider = melody[thisNote + 1];
     int noteDuration = (divider > 0) ? wholenote / divider : wholenote / abs(divider) * 1.5;
 
@@ -494,13 +499,13 @@ void setup() {
   // Initialize NeoPixel and set the brightness
   strip.Begin();
 
- //strip.setBrightness(1);
+  //strip.setBrightness(1);
   strip.ClearTo(RgbColor(0, 0, 0));
   strip.Show();
 
 
   xTaskCreatePinnedToCore(neoPixelMODO, "NeoPixel", 1000, NULL, 1, &neoPixelMode, tskNO_AFFINITY);
-  //xTaskCreatePinnedToCore(piezzoMODO, "Piezzo", 1000, NULL, 1, &piezzoMode, tskNO_AFFINITY);
+  xTaskCreatePinnedToCore(piezzoMODO, "Piezzo", 1000, NULL, 1, &piezzoMode, tskNO_AFFINITY);
   //vTaskSuspend(); para suspender a task
 }
 
@@ -509,8 +514,6 @@ void setup() {
 //============================================================================FUNCTIONS TASKS=========================================================================================
 //====================================================================================================================================================================================
 //====================================================================================================================================================================================
-
-String lastState = "ESPERA";
 
 void piezzoMODO(void*) {
   while (true) {
@@ -546,32 +549,32 @@ void piezzoMODO(void*) {
 void neoPixelMODO(void*) {
   while (true) {
     if (lastState == "ESPERA") {
-      
+
       strip.ClearTo(RgbColor(0, 0, 0));
       strip.Show();
       delay(100);
-      
+
     } else if (lastState == "ACEITE") {
       strip.ClearTo(RgbColor(0, 0, 0));
       strip.Show();
 
       for (int pixel = 0; pixel < numNeopixel; pixel++) {
-        if(lastState != "ACEITE")
+        if (lastState != "ACEITE")
           break;
-        
+
         strip.SetPixelColor(pixel, RgbColor(60, 0, 0));
         strip.Show();
         delay(500);
       }
-      
+
     } else if (lastState == "PREPARAR") {
       strip.ClearTo(RgbColor(0, 0, 0));
       strip.Show();
 
       for (int pixel = 0; pixel < numNeopixel; pixel++) {
-        if(lastState != "PREPARAR")
+        if (lastState != "PREPARAR")
           break;
-        
+
         strip.SetPixelColor(pixel, RgbColor(60, 60, 0));
         strip.Show();
         delay(500);
@@ -631,7 +634,7 @@ void executePREPARAR() {  //TFT: "A preparar";NEOPIXEIS: Loading com leds amarel
 void executePRONTO() {  //TFT: "Pronto";NEOPIXEIS: Acendem todos verdes;PIEZO: Toque intermitente
   //vTaskSuspend(neoPixelMode);            // To end the last tasks
   //vTaskSuspend(piezzoMode);         // To end the last tasks
-  
+
   TFT.fillScreen(ST7735_BLACK);
   TFT.setTextColor(ST7735_WHITE);
   TFT.setTextSize(2);
